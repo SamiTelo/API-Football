@@ -1,98 +1,103 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+Backend API – NestJS + Prisma + Auth + CRUD Football club
+(Ce projet est un prototype d’API en cours de développement. La logique métier principale est fonctionnelle.)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API backend complète construite avec NestJS, Prisma, PostgreSQL, sécurisée avec JWT, Refresh Tokens, Roles & Permissions, et comprenant des modules métier (Players, Teams, Positions).
+Inclut également du monitoring (Prometheus + Grafana) et du tracking d’erreurs (Sentry).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Statut : Travail en cours (WIP)
 
-## Description
+Objectif : L’objectif de ce projet est de développer une API backend complète dédiée à la gestion du football, permettant d’administrer des joueurs, des équipes et des postes, tout en s’appuyant sur une architecture moderne et sécurisée.
+Ce projet, bien qu’étant une initiative personnelle, est rendu public pour :
+- partager une architecture propre et réutilisable,
+- servir de référence ou d’inspiration à d’autres développeurs,
+- et continuer à évoluer autour d’un thème passionnant : le football.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## ✨ Fonctionnalités
+- Inscription & connexion sécurisées (JWT + Refresh Token)
+- Réinitialisation de mot de passe
+- Gestion des rôles (USER, ADMIN, SUPERADMIN)
+- Protection des routes (Guards & Decorators)
+- Guards d’autorisation (JwtAuthGuard, RolesGuard)
+- Permissions associées aux rôles
+- Tentatives d’inscription enregistrées (SignupAttempt)
+- Rate limiting (anti brute-force)
+- Monitoring Prometheus + Grafana
+- Logs structurés (Winston)
+- Sentry (errors & performance)
 
-## Project setup
+## 🚀 Fonctionnalités à venir (feature)
+- Validation d’email
+- Upload de fichiers (images de joueurs, logos d’équipes, documents…)
+- Optimisation des performances
+- Ajout de nouveaux modules métier
+- Interface d’administration (peut-être plus tard)
+- etc...
 
+## 🛠️ Stack
+- **NestJS**
+- **Prisma ORM**
+- **PostgreSQL**
+- **Swagger**
+- **Sentry**
+- **Prometheus / Grafana**
+  
+
+## ⚽ Modules métier – CRUD complet
+
+👥 Players
+- CRUD complet des joueurs
+- Association à un poste (Position)
+- Association à une équipe (Team)
+
+🏆 Teams
+- Création & gestion des équipes
+- Relation avec les joueurs
+
+🎯 Positions
+- Gestion des postes (nom unique)
+- Association automatique avec les joueurs
+
+
+## 🗄️ Prisma – Modèles utilisés
+- User
+- Role
+- Permission
+- SignupAttempt
+- Player
+- Team
+- Position
+
+## ▶️ Démarrage
 ```bash
-$ npm install
+git clone https://github.com/<ton-user>/<ton-repo>.git
+cd <ton-repo>
+npm install
+npm run start:dev
 ```
 
-## Compile and run the project
-
+## 🗂️ Scripts utiles
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm run migrate       # Migration Prisma
+npm run studio        # Prisma Studio
+npm run build
 ```
 
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+## 🔐 Variables d’environnement (.env)
+```
+DATABASE_URL=
+JWT_SECRET=
+JWT_REFRESH_SECRET=
+MAIL_USER=
+MAIL_PASS=
+SENTRY_DSN=
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+## 📚 Documentation
+Une documentation Swagger est disponible :
+```
+http://localhost:3000/api
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 👤 Auteur
+**Samuel tiemtore**
 
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
