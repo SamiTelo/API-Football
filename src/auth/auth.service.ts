@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -13,7 +14,6 @@ import { ForgotPasswordDto } from './dto/Password/forgot-password.dto';
 import { ResetPasswordDto } from './dto/Password/reset-password.dto';
 import { MailService } from 'src/mail/mail.service';
 import { ConfigService } from '@nestjs/config';
-import { SignupAttempt } from '@prisma/client';
 
 interface JwtRefreshPayload {
   sub: number;
@@ -21,6 +21,8 @@ interface JwtRefreshPayload {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
@@ -29,63 +31,90 @@ export class AuthService {
   ) {}
 
   /* -----------------------------------------------
-   * UTILITAIRES : Génération des tokens
+   * UTILITAIRE : Génération générique de tokens
    ------------------------------------------------ */
-  private async generateAccessToken(user: { id: number; email: string }) {
-    return this.jwt.signAsync(
-      { sub: user.id, email: user.email },
+
+  // Génération générique de token
+  private async generateToken(
+    payload: object,
+    secretEnv: string,
+    expiresInSeconds: number, // <- uniquement number
+  ): Promise<string> {
+    const secret = this.configService.get<string>(secretEnv);
+    if (!secret) throw new Error(`Missing JWT secret for ${secretEnv}`);
+
+    return this.jwt.signAsync(payload, {
+      secret,
+      expiresIn: expiresInSeconds, // TypeScript accepte directement number
+    });
+  }
+
+  // Génération access token
+  private async generateAccessToken(user: {
+    id: number;
+    email: string;
+    role?: string;
+  }) {
+    const expiresIn = Number(this.configService.get('JWT_EXPIRATION')) || 3600;
+
+    // Récupère le rôle depuis la base si nécessaire
+    const dbUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      include: { role: true },
+    });
+
+    return this.generateToken(
       {
-        secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: Number(this.configService.get('JWT_EXPIRATION')) || 3600,
+        sub: user.id,
+        email: user.email,
+        role: dbUser?.role?.name, // <-- ajoute le rôle ici
       },
+      'JWT_SECRET',
+      expiresIn,
     );
   }
 
+  // Génération refresh token
   private async generateRefreshToken(user: { id: number }) {
-    return this.jwt.signAsync(
-      { sub: user.id },
+    const expiresIn =
+      Number(this.configService.get('JWT_REFRESH_EXPIRATION')) || 86400;
+    return this.generateToken(
       {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: 24 * 3600, // 24h
+        sub: user.id,
       },
+      'JWT_REFRESH_SECRET',
+      expiresIn,
+    );
+  }
+
+  private getFrontendUrl(): string {
+    return (
+      this.configService.get<string>('FRONTEND_URL') ??
+      'https://mon-domaine.com'
     );
   }
 
   /* -----------------------------------------------
- * REGISTER
- ------------------------------------------------ */
-  async register(createUserDto: CreateUserDto, ip: string) {
-    const { firstName, lastName, email, password } = createUserDto;
+   * REGISTER USER (ROLE AUTO = USER)
+   ------------------------------------------------ */
+  async register(dto: CreateUserDto, ip: string) {
+    const { firstName, lastName, email, password } = dto;
 
-    /* -----------------------------
-   * 1) Détection création admin
-   ------------------------------ */
-    const isAdminCreation = createUserDto.role === 'ADMIN';
+    const attempts = await this.prisma.signupAttempt.count({
+      where: {
+        ip,
+        createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      },
+    });
 
-    /* ---------------------------------------------------------
-   * 2) Limite IP = uniquement pour les utilisateurs normaux
-   --------------------------------------------------------- */
-    if (!isAdminCreation) {
-      const recentAttempts: SignupAttempt[] =
-        await this.prisma.signupAttempt.findMany({
-          where: {
-            ip,
-            createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-          },
-        });
-
-      if (recentAttempts.length >= 3) {
-        throw new ConflictException(
-          'Trop de comptes créés depuis cette IP. Réessayez demain.',
-        );
-      }
-
-      await this.prisma.signupAttempt.create({ data: { ip } });
+    if (attempts >= 3) {
+      throw new ConflictException(
+        'Trop de comptes créés depuis cette IP. Réessayez demain.',
+      );
     }
 
-    /* ---------------------------------------------------------
-   * 3) Vérifie un utilisateur avec cet email existe déjà
-   --------------------------------------------------------- */
+    await this.prisma.signupAttempt.create({ data: { ip } });
+
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -93,27 +122,16 @@ export class AuthService {
       throw new ConflictException('Un utilisateur possède déjà cet email');
     }
 
-    /* -------------------------
-   * 4) Hash du mot de passe
-   -------------------------- */
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    /* ---------------------------------------------------------
-   * 5) Gestion du rôle dynamique (USER / ADMIN / autre)
-   --------------------------------------------------------- */
-    const desiredRole = createUserDto.role ?? 'USER';
-
-    let role = await this.prisma.role.findUnique({
-      where: { name: desiredRole },
+    const role = await this.prisma.role.findUnique({
+      where: { name: 'USER' },
     });
 
     if (!role) {
-      role = await this.prisma.role.create({ data: { name: desiredRole } });
+      throw new Error('Le rôle USER doit exister en base');
     }
 
-    /* -----------------------------
-   * 6) Création du user
-   ------------------------------ */
     const user = await this.prisma.user.create({
       data: {
         firstName,
@@ -121,46 +139,52 @@ export class AuthService {
         email,
         password: hashedPassword,
         roleId: role.id,
+        isVerified: false,
       },
     });
 
-    /* -----------------------------
-   * 7) Tokens
-   ------------------------------ */
-    const access_token = await this.generateAccessToken(user);
-    const refreshToken = await this.generateRefreshToken(user);
+    const verifyToken = await this.generateToken(
+      { sub: user.id },
+      'JWT_VERIFY_SECRET',
+      Number(this.configService.get('JWT_VERIFY_EXPIRATION')) || 86400,
+    );
 
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    const verifyLink = `${this.getFrontendUrl()}/verify-email?token=${verifyToken}`;
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken: hashedRefreshToken },
-    });
+    await this.mail.sendMail(
+      user.email,
+      'Confirmez votre email',
+      `<p>Bonjour ${user.firstName},</p>
+       <p>Veuillez confirmer votre email :</p>
+       <a href="${verifyLink}">${verifyLink}</a>`,
+    );
 
-    return { user, access_token, refreshToken };
+    return {
+      message: 'Compte créé. Vérifiez votre email pour l’activer.',
+    };
   }
 
   /* -----------------------------------------------
- * LOGIN
- ------------------------------------------------ */
-  async login(loginUserDto: LoginUserDto) {
-    const { email, password } = loginUserDto;
+   * LOGIN
+   ------------------------------------------------ */
+  async login(dto: LoginUserDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
 
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) throw new UnauthorizedException('Identifiants invalides');
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid)
+    if (!user || !user.isVerified) {
       throw new UnauthorizedException('Identifiants invalides');
+    }
+
+    const valid = await bcrypt.compare(dto.password, user.password);
+    if (!valid) throw new UnauthorizedException('Identifiants invalides');
 
     const access_token = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user);
 
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { refreshToken: hashedRefreshToken },
+      data: { refreshToken: await bcrypt.hash(refreshToken, 10) },
     });
 
     return {
@@ -169,12 +193,68 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        createdAt: user.createdAt,
       },
       access_token,
       refreshToken,
     };
   }
+
+  /* -----------------------------------------------
+   * VERIFY EMAIL
+   ------------------------------------------------ */
+  async verifyEmail(token: string) {
+    const payload = this.jwt.verify<{ sub: number }>(token, {
+      secret: this.configService.get('JWT_VERIFY_SECRET'),
+    });
+
+    await this.prisma.user.update({
+      where: { id: payload.sub },
+      data: { isVerified: true },
+    });
+
+    return { message: 'Email vérifié avec succès' };
+  }
+
+  // -----------------------------------------------
+  // CREATE ADMIN (avec audit IP)
+  // -----------------------------------------------
+  async createAdmin(dto: CreateUserDto, ip: string) {
+    // Audit / traçabilité
+    this.logger.warn(
+      `Tentative de création ADMIN depuis IP: ${ip} | Email: ${dto.email}`,
+    );
+
+    const role = await this.prisma.role.findUnique({
+      where: { name: 'ADMIN' },
+    });
+
+    if (!role) {
+      this.logger.error('Rôle ADMIN introuvable en base');
+      throw new Error('Le rôle ADMIN doit exister');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    const user = await this.prisma.user.create({
+      data: {
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        email: dto.email,
+        password: hashedPassword,
+        roleId: role.id,
+        isVerified: true, // admin activé directement
+      },
+    });
+
+    //  Log succès
+    this.logger.log(`ADMIN créé avec succès | ID: ${user.id} | IP: ${ip}`);
+
+    return {
+      message: 'Administrateur créé avec succès',
+      userId: user.id,
+    };
+  }
+
   /* -----------------------------------------------
    * PROFILE / VALIDATION
    ------------------------------------------------ */
@@ -210,15 +290,15 @@ export class AuthService {
 
       const access_token = await this.generateAccessToken(user);
       return { access_token };
-    } catch (err) {
-      console.error('Erreur refresh token:', err);
+    } catch (error) {
+      this.logger.error('Erreur refresh token', error);
       throw new UnauthorizedException('Refresh token invalide ou expiré');
     }
   }
 
-  /* -------------------------------------------------------------------
-   * REFRESH ACCES TOKEN ET RENVOI UN NOUVEAU REFRESH TOKEN
-   ------------------------------------------------------------------- */
+  /* -----------------------------------------------
+   * REFRESH ACCESS TOKEN + NEW REFRESH TOKEN
+   ------------------------------------------------ */
   async refreshAccessTokenAndUpdateToken(oldRefreshToken: string) {
     try {
       const payload = this.jwt.verify<JwtRefreshPayload>(oldRefreshToken, {
@@ -228,43 +308,36 @@ export class AuthService {
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
       });
-
-      if (!user || !user.refreshToken) {
+      if (!user || !user.refreshToken)
         throw new UnauthorizedException('Utilisateur invalide');
-      }
 
-      // Vérifie que le refresh token hashé correspond
       const isTokenValid = await bcrypt.compare(
         oldRefreshToken,
         user.refreshToken,
       );
-      if (!isTokenValid) {
+      if (!isTokenValid)
         throw new UnauthorizedException('Refresh token invalide');
-      }
 
-      // Génère de nouveaux tokens
       const access_token = await this.generateAccessToken(user);
       const newRefreshToken = await this.generateRefreshToken(user);
       const hashedRefreshToken = await bcrypt.hash(newRefreshToken, 10);
 
-      // Stocke le nouveau refresh token hashé
       await this.prisma.user.update({
         where: { id: user.id },
         data: { refreshToken: hashedRefreshToken },
       });
 
       return { access_token, refreshToken: newRefreshToken };
-    } catch (err) {
-      console.error('Erreur refresh token:', err);
+    } catch (error) {
+      this.logger.error('Erreur refresh token', error);
       throw new UnauthorizedException('Refresh token invalide ou expiré');
     }
   }
 
   /* -----------------------------------------------
- * LOGOUT
- ------------------------------------------------ */
+   * LOGOUT
+   ------------------------------------------------ */
   async logout(userId: number) {
-    // Supprime le refresh token en base
     await this.prisma.user.update({
       where: { id: userId },
       data: { refreshToken: null },
@@ -280,16 +353,13 @@ export class AuthService {
     });
     if (!user) throw new NotFoundException('Utilisateur non trouvé');
 
-    const resetToken = await this.jwt.signAsync(
+    const resetToken = await this.generateToken(
       { sub: user.id },
-      {
-        secret: this.configService.get('JWT_RESET_SECRET'),
-        expiresIn:
-          Number(this.configService.get('JWT_RESET_EXPIRATION')) || 900,
-      },
+      'JWT_RESET_SECRET',
+      Number(this.configService.get('JWT_RESET_EXPIRATION')) || 900,
     );
 
-    const resetLink = `https://ton-domaine.com/reset-password?token=${resetToken}`;
+    const resetLink = `${this.getFrontendUrl()}/reset-password?token=${resetToken}`;
 
     await this.mail.sendMail(
       user.email,
@@ -325,8 +395,8 @@ export class AuthService {
       });
 
       return { message: 'Mot de passe réinitialisé avec succès' };
-    } catch (err) {
-      console.error('Erreur reset password:', err);
+    } catch (error) {
+      this.logger.error('Erreur reset password', error);
       throw new UnauthorizedException('Token invalide ou expiré');
     }
   }

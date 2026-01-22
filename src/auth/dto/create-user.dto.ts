@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString, Matches } from 'class-validator';
-import { IsOptional, IsNumber, IsPositive } from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty({
@@ -23,7 +22,7 @@ export class CreateUserDto {
 
   @ApiProperty({
     description: `Adresse email  de l'utilisateur`,
-    example: `telo@gmail.com`,
+    example: `example@gmail.com`,
     required: true,
   })
   @IsNotEmpty({ message: `Email requis pour s'inscrire` })
@@ -51,14 +50,4 @@ export class CreateUserDto {
       'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre.',
   })
   password: string;
-
-  @ApiProperty({ example: 'ADMIN', required: false })
-  @IsString()
-  role?: string; // 🔹 ajouter cette ligne
-
-  @ApiProperty({ example: '2' })
-  @IsOptional()
-  @IsNumber()
-  @IsPositive()
-  roleId?: number;
 }
