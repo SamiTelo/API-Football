@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD, Reflector } from '@nestjs/core';
+//import { APP_GUARD, Reflector } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { PositionModule } from './position/position.module';
 import { TeamModule } from './team/team.module';
@@ -8,16 +8,13 @@ import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
 import { ConfigModule } from '@nestjs/config';
 import { envValidationSchema } from './config/env.validation';
-import {
-  ThrottlerModule,
-  ThrottlerStorage,
-  ThrottlerModuleOptions,
-} from '@nestjs/throttler';
 import { LoggerModule } from './logger/logger.module';
-import { LoggerService } from './logger/logger.service';
-import { LoggingThrottlerGuard } from './guards/logging-throttler.guard';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { SentryTracingModule } from './sentry/sentry-tracing.module';
+// import { APP_GUARD, Reflector } from '@nestjs/core';
+// import { LoggingThrottlerGuard } from './guards/logging-throttler.guard';
+// import { LoggerService } from './logger/logger.service';
+// import { ThrottlerStorage, ThrottlerModuleOptions } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -32,11 +29,10 @@ import { SentryTracingModule } from './sentry/sentry-tracing.module';
     PrometheusModule.register(),
 
     // Limite globale : 100 requêtes / 15 minutes
-    ThrottlerModule.forRoot({
-      // @ts-expect-error: TS ne reconnaît pas les propriétés ttl/limit sur ThrottlerModuleOptions
-      ttl: Number(process.env.THROTTLE_TTL || 900),
-      limit: Number(process.env.THROTTLE_LIMIT || 100),
-    }),
+    //ThrottlerModule.forRoot({
+    //ttl: Number(process.env.THROTTLE_TTL || 900),
+    //limit: Number(process.env.THROTTLE_LIMIT || 100),
+    //}),
 
     MailModule,
     LoggerModule, // ✅ global
@@ -48,23 +44,18 @@ import { SentryTracingModule } from './sentry/sentry-tracing.module';
     SentryTracingModule,
   ],
   providers: [
-    {
-      provide: APP_GUARD,
-      useFactory: (
-        logger: LoggerService,
-        storage: ThrottlerStorage,
-        reflector: Reflector,
-      ) => {
-        const options: ThrottlerModuleOptions = {
-          // @ts-expect-error: TS ne reconnaît pas les propriétés ttl/limit sur ThrottlerModuleOptions
-          ttl: Number(process.env.THROTTLE_TTL || 900),
-          limit: Number(process.env.THROTTLE_LIMIT || 100),
-          throttlers: [],
-        };
-        return new LoggingThrottlerGuard(logger, options, storage, reflector);
-      },
-      inject: [LoggerService, ThrottlerStorage, Reflector],
-    },
+    //   {
+    //     provide: APP_GUARD,
+    //     useFactory: (logger: LoggerService, storage: ThrottlerStorage, reflector: Reflector) => {
+    //       const options: ThrottlerModuleOptions = {
+    //         ttl: Number(process.env.THROTTLE_TTL || 900),
+    //         limit: Number(process.env.THROTTLE_LIMIT || 100),
+    //         throttlers: [],
+    //       };
+    //       return new LoggingThrottlerGuard(logger, options, storage, reflector);
+    //     },
+    //     inject: [LoggerService, ThrottlerStorage, Reflector],
+    //   },
   ],
 })
 export class AppModule {}

@@ -216,12 +216,12 @@ export class AuthService {
   }
 
   // -----------------------------------------------
-  // CREATE ADMIN (avec audit IP)
+  // CREATE ADMIN (avec audit IP et utilisateur créateur)
   // -----------------------------------------------
-  async createAdmin(dto: CreateUserDto, ip: string) {
+  async createAdmin(dto: CreateUserDto, ip: string, creatorEmail?: string) {
     // Audit / traçabilité
     this.logger.warn(
-      `Tentative de création ADMIN depuis IP: ${ip} | Email: ${dto.email}`,
+      `Tentative de création ADMIN depuis IP: ${ip} | Email à créer: ${dto.email} | Initié par: ${creatorEmail ?? 'inconnu'}`,
     );
 
     const role = await this.prisma.role.findUnique({
@@ -246,8 +246,10 @@ export class AuthService {
       },
     });
 
-    //  Log succès
-    this.logger.log(`ADMIN créé avec succès | ID: ${user.id} | IP: ${ip}`);
+    // Log succès complet
+    this.logger.log(
+      `ADMIN créé avec succès | ID: ${user.id} | Email: ${user.email} | IP: ${ip} | Créé par: ${creatorEmail ?? 'inconnu'}`,
+    );
 
     return {
       message: 'Administrateur créé avec succès',

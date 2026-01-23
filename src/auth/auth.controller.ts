@@ -12,14 +12,15 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
-import { jwtAuthGuard } from './jwt-auth.guard';
 import { JwtPayload } from './jwt.strategy';
 import { ForgotPasswordDto } from './dto/Password/forgot-password.dto';
 import { ResetPasswordDto } from './dto/Password/reset-password.dto';
-import { Roles } from './decorators/roles.decorator';
 import { RolesGuard } from './guards/roles.guard';
 import { Throttle } from '@nestjs/throttler';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { Roles } from './decorators/roles.decorator';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 interface AuthenticatedRequest extends Request {
   user: JwtPayload;
@@ -54,7 +55,8 @@ export class AuthController {
   /* -----------------------------------------------
    * CREATE ADMIN
    ------------------------------------------------ */
-  @UseGuards(jwtAuthGuard, RolesGuard)
+  @ApiBearerAuth('access-token') //  doit correspondre au nom du security scheme
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPERADMIN')
   @Post('create-admin')
   async createAdmin(@Body() createUserDto: CreateUserDto, @Req() req: Request) {
@@ -93,7 +95,7 @@ export class AuthController {
   /* -----------------------------------------------
    * PROFILE
    ------------------------------------------------ */
-  @UseGuards(jwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Req() req: AuthenticatedRequest) {
     return this.authService.validateUser(req.user.sub);

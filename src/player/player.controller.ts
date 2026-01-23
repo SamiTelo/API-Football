@@ -8,10 +8,10 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import { Permissions } from 'src/auth/decorators/permissions.decorator';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
-import { jwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { Player } from '@prisma/client/edge';
 import { Throttle } from '@nestjs/throttler';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('player')
 export class PlayerController {
@@ -43,7 +43,7 @@ export class PlayerController {
     return this.playerservice.getAllPlayerByteam(teamId);
   }
   @ApiBearerAuth()
-  @UseGuards(jwtAuthGuard, PermissionsGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('CREATE_PLAYER')
   @Post()
   createPlayer(@Body() data: CreatePlayerDto): Promise<Player> {
@@ -58,7 +58,7 @@ export class PlayerController {
     return this.playerservice.upadtePlayer(id, data);
   }
   @ApiBearerAuth()
-  @UseGuards(jwtAuthGuard, RolesGuard, PermissionsGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles('SUPERADMIN')
   @Permissions('DELETE_PLAYER')
   @Delete('/:id')

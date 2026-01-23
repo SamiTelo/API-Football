@@ -19,7 +19,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (!jwtSecret) {
       throw new InternalServerErrorException('JWT_SECRET doit être défini');
     }
-
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -37,7 +36,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (!user) {
       throw new InternalServerErrorException('Utilisateur non trouvé');
     }
-
     return {
       id: user.id,
       email: user.email,

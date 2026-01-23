@@ -44,7 +44,14 @@ async function bootstrap() {
     .setTitle('API Club Football')
     .setVersion('1.0')
     .addTag('football')
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http', // obligatoire, standard OpenAPI
+        scheme: 'bearer', // « Authorization: Bearer <token> »
+        bearerFormat: 'JWT', // optionnel mais clair pour Swagger
+      },
+      'access-token', // nom du security scheme → important si tu as plusieurs guards
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
