@@ -4,6 +4,8 @@ import {
   NotFoundException,
   UnauthorizedException,
   Logger,
+  BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -45,7 +47,7 @@ export class AuthService {
 
     return this.jwt.signAsync(payload, {
       secret,
-      expiresIn: expiresInSeconds, // TypeScript accepte directement number
+      expiresIn: expiresInSeconds, // number accepter directement par Ts
     });
   }
 
@@ -219,22 +221,43 @@ export class AuthService {
   // CREATE ADMIN (avec audit IP et utilisateur créateur)
   // -----------------------------------------------
   async createAdmin(dto: CreateUserDto, ip: string, creatorEmail?: string) {
-    // Audit / traçabilité
+    const initiator = creatorEmail ?? 'inconnu';
+
+    //  Audit tentative
     this.logger.warn(
-      `Tentative de création ADMIN depuis IP: ${ip} | Email à créer: ${dto.email} | Initié par: ${creatorEmail ?? 'inconnu'}`,
+      `Tentative création ADMIN | Email: ${dto.email} | IP: ${ip} | Par: ${initiator}`,
     );
 
+    //  Vérification doublon email
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (existingUser) {
+      this.logger.warn(
+        `ÉCHEC création ADMIN | Email déjà existant: ${dto.email} | IP: ${ip}`,
+      );
+      throw new BadRequestException(
+        'Un utilisateur avec cet email existe déjà',
+      );
+    }
+
+    //  Rôle ADMIN
     const role = await this.prisma.role.findUnique({
       where: { name: 'ADMIN' },
     });
 
     if (!role) {
       this.logger.error('Rôle ADMIN introuvable en base');
-      throw new Error('Le rôle ADMIN doit exister');
+      throw new InternalServerErrorException(
+        'Configuration invalide : rôle ADMIN manquant',
+      );
     }
 
+    //  Hash mot de passe
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
+    //  Création admin
     const user = await this.prisma.user.create({
       data: {
         firstName: dto.firstName,
@@ -242,13 +265,13 @@ export class AuthService {
         email: dto.email,
         password: hashedPassword,
         roleId: role.id,
-        isVerified: true, // admin activé directement
+        isVerified: true,
       },
     });
 
-    // Log succès complet
+    //  Log succès
     this.logger.log(
-      `ADMIN créé avec succès | ID: ${user.id} | Email: ${user.email} | IP: ${ip} | Créé par: ${creatorEmail ?? 'inconnu'}`,
+      `ADMIN créé | ID: ${user.id} | Email: ${user.email} | IP: ${ip} | Par: ${initiator}`,
     );
 
     return {
@@ -256,7 +279,6 @@ export class AuthService {
       userId: user.id,
     };
   }
-
   /* -----------------------------------------------
    * PROFILE / VALIDATION
    ------------------------------------------------ */

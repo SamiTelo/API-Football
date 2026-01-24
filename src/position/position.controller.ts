@@ -6,7 +6,6 @@ import { CreatePositionDto } from './dto/create-position.dto';
 import { UpdatePositionDto } from './dto/update-position.dto';
 
 /**
- * Controller responsable de gérer toutes les routes liées aux Positions.
  * Le prefixe 'position' sera ajouté à toutes les routes définies ici.
  */
 @Controller('position')
