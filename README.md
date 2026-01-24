@@ -101,4 +101,5 @@ http://localhost:3000/api
 
 ##  Auteur
 **Samuel tiemtore**
+samueltiemtore10@gmail.com
 

@@ -13,7 +13,7 @@ export interface JwtPayload {
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
     private configService: ConfigService,
-    private prisma: PrismaService, // 🔹 inject PrismaService
+    private prisma: PrismaService, //  inject PrismaService
   ) {
     const jwtSecret = configService.get<string>('JWT_SECRET');
     if (!jwtSecret) {
@@ -27,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: JwtPayload) {
-    // 🔹 Récupère l'utilisateur complet avec rôle et permissions
+    // Récupère l'utilisateur complet avec rôle et permissions
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       include: { role: { include: { permissions: true } } },
@@ -37,7 +37,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       throw new InternalServerErrorException('Utilisateur non trouvé');
     }
     return {
-      id: user.id,
+      sub: user.id,
       email: user.email,
       role: user.role?.name,
       permissions: user.role?.permissions.map((p) => p.name) || [],
