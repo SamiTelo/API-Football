@@ -56,7 +56,7 @@ export class AuthController {
   /* -----------------------------------------------
    * CREATE ADMIN
    ------------------------------------------------ */
-  @ApiBearerAuth('access-token') //  doit correspondre au nom du security scheme
+  @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SUPERADMIN')
   @Post('create-admin')

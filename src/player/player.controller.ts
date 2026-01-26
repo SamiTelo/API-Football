@@ -42,7 +42,7 @@ export class PlayerController {
   ): Promise<Player[]> {
     return this.playerservice.getAllPlayerByteam(teamId);
   }
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('CREATE_PLAYER')
   @Post()
@@ -57,7 +57,7 @@ export class PlayerController {
   ): Promise<Player> {
     return this.playerservice.upadtePlayer(id, data);
   }
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles('SUPERADMIN')
   @Permissions('DELETE_PLAYER')
