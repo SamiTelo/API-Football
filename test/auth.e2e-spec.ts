@@ -99,8 +99,7 @@ describe('AuthController (e2e)', () => {
 
     expect(loginResponse.body).toHaveProperty('access_token');
     expect(loginResponse.body).toHaveProperty('user');
-    // Vérifie que le token est présent
-    expect(token).toBeDefined();
+    expect(token).toBeDefined(); // Vérifie que le token est présent
 
     //---------------------------------------------
     //  PROFILE

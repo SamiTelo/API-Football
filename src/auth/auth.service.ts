@@ -36,7 +36,7 @@ export class AuthService {
    * UTILITAIRE : Génération générique de tokens
    ------------------------------------------------ */
 
-  // Génération générique de token
+  // Génération token
   private async generateToken(
     payload: object,
     secretEnv: string,
@@ -55,21 +55,18 @@ export class AuthService {
   private async generateAccessToken(user: {
     id: number;
     email: string;
-    role?: string;
+    role?: { id: number; name: string } | null; // accepte le rôle complet ou null
   }) {
     const expiresIn = Number(this.configService.get('JWT_EXPIRATION')) || 3600;
 
-    // Récupère le rôle depuis la base si nécessaire
-    const dbUser = await this.prisma.user.findUnique({
-      where: { id: user.id },
-      include: { role: true },
-    });
+    // Prend le nom du rôle si présent, sinon fallback à undefined
+    const roleName = user.role?.name;
 
     return this.generateToken(
       {
         sub: user.id,
         email: user.email,
-        role: dbUser?.role?.name, // <-- ajoute le rôle ici
+        role: roleName, // ici c'est un string ou undefined
       },
       'JWT_SECRET',
       expiresIn,
@@ -172,6 +169,7 @@ export class AuthService {
   async login(dto: LoginUserDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
+      include: { role: true }, // inclure le rôle
     });
 
     if (!user || !user.isVerified) {
@@ -188,6 +186,36 @@ export class AuthService {
       where: { id: user.id },
       data: { refreshToken: await bcrypt.hash(refreshToken, 10) },
     });
+
+    //  Vérifier si 2FA est requis pour le rôle
+    if (user.role?.name === 'ADMIN' || user.role?.name === 'SUPERADMIN') {
+      // Générer code 2FA temporaire (6 chiffres)
+      const twoFactorCode = Math.floor(
+        100000 + Math.random() * 900000,
+      ).toString();
+      const twoFactorExpiry = new Date(Date.now() + 5 * 60 * 1000); // expire dans 5 min
+
+      // Sauvegarder le code et l'expiration en base
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { twoFactorCode, twoFactorExpiry },
+      });
+
+      // Envoyer le code par email
+      await this.mail.sendMail(
+        user.email,
+        'Votre code 2FA',
+        `<p>Bonjour ${user.firstName},</p>
+       <p>Voici votre code 2FA : <strong>${twoFactorCode}</strong></p>
+       <p>Il expire dans 5 minutes.</p>`,
+      );
+
+      // Retourner seulement le flag 2FA requis, pas encore les tokens finaux
+      return {
+        twoFactorRequired: true,
+        userId: user.id, // pour identifier l'utilisateur côté frontend
+      };
+    }
 
     return {
       user: {
@@ -215,6 +243,34 @@ export class AuthService {
     });
 
     return { message: 'Email vérifié avec succès' };
+  }
+
+  /* -----------------------------------------------
+   * VERIFY 2FA
+   ------------------------------------------------ */
+  async verify2fa(userId: number, code: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.twoFactorCode || !user.twoFactorExpiry)
+      throw new UnauthorizedException();
+
+    if (user.twoFactorExpiry < new Date())
+      throw new UnauthorizedException('Code expiré');
+
+    const valid = await bcrypt.compare(code, user.twoFactorCode);
+    if (!valid) throw new UnauthorizedException('Code invalide');
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        twoFactorCode: null,
+        twoFactorExpiry: null,
+      },
+    });
+
+    return {
+      access_token: await this.generateAccessToken(user),
+      refreshToken: await this.generateRefreshToken(user),
+    };
   }
 
   // -----------------------------------------------
@@ -279,6 +335,7 @@ export class AuthService {
       userId: user.id,
     };
   }
+
   /* -----------------------------------------------
    * PROFILE / VALIDATION
    ------------------------------------------------ */

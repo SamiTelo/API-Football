@@ -21,6 +21,7 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { Roles } from './decorators/roles.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { Verify2FaDto } from './dto/verify-2fa.dto';
 
 interface AuthenticatedRequest extends Request {
   user: JwtPayload;
@@ -90,6 +91,14 @@ export class AuthController {
     });
 
     return { user, access_token };
+  }
+
+  /* -----------------------------------------------
+   * VERIFY 2FA
+   ------------------------------------------------ */
+  @Post('verify-2fa')
+  async verify2fa(@Body() dto: Verify2FaDto) {
+    return this.authService.verify2fa(dto.userId, dto.code);
   }
 
   /* -----------------------------------------------
