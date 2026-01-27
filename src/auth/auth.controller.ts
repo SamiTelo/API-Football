@@ -80,8 +80,15 @@ export class AuthController {
     @Body() dto: LoginUserDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { access_token, refreshToken, user } =
-      await this.authService.login(dto);
+    const result = await this.authService.login(dto);
+
+    // Si 2FA est nécessaire
+    if ('twoFactorRequired' in result) {
+      return result; // renvoie { twoFactorRequired, userId }
+    }
+
+    // Sinon, c'est un login normal
+    const { access_token, refreshToken, user } = result;
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,

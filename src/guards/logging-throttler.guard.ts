@@ -47,7 +47,7 @@ export class LoggingThrottlerGuard extends ThrottlerGuard {
 
     // Logging côté serveur
     this.logger.warn(
-      `🚨 Dépassement du rate limit pour IP ${ip} sur la route ${path}. Limite : ${throttlerLimitDetail.limit} requêtes/${throttlerLimitDetail.ttl}s`,
+      `Dépassement du rate limit pour IP ${ip} sur la route ${path}. Limite : ${throttlerLimitDetail.limit} requêtes/${throttlerLimitDetail.ttl}s`,
     );
 
     // Monitoring : incrémenter le compteur Prometheus

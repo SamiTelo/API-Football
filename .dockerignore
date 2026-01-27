@@ -1,0 +1,38 @@
+# Dépendances locales
+node_modules
+
+# Build local
+dist
+
+# Environnement
+.env
+.env.*
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Tests
+test
+coverage
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# Docs
+README.md
+docs
+
+# Prisma
+.prisma
+
+# OS
+.DS_Store
+Thumbs.db
