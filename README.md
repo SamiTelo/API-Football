@@ -28,8 +28,8 @@ Ce projet a été développé en utilisant une approche assistée par IA (GPT-5)
 
 ##  Fonctionnalités
 - Inscription & connexion sécurisées (JWT + Refresh Token)
-- Verification par mail
-- Verification 2FA
+- Verification par mail (USER)
+- Verification 2FA (ADMIN & SUPERADMIN)
 - Réinitialisation de mot de passe
 - Gestion des rôles (USER, ADMIN, SUPERADMIN) RBAC
 - Protection des routes (Guards & Decorators)
@@ -41,24 +41,28 @@ Ce projet a été développé en utilisant une approche assistée par IA (GPT-5)
 - Logs structurés (Winston)
 - Sentry (errors & performance)
 - Gestions des joueur, equipe, poste etc..
+- Docker
 
 ##  Fonctionnalités à venir (feature)
 - Upload de fichiers (images de joueurs, logos d’équipes, documents…)
 - Optimisation des performances (caching)
 - Ajout et mise en place de nouveaux modules métier
-- Docker
 - CI/CD
 - Github Action
 - etc...
 
 ##  Stack
 - **NestJS**
+- **NodeJS**
+- **TypeScript**
 - **Prisma ORM**
 - **JWT**
 - **PostgreSQL**
 - **Swagger**
+- **Docker**
 - **Test unitaire jest**
 - **Test E2E supertest**
+- **Winston**
 - **Sentry**
 - **Prometheus / Grafana**
 - **Throtller**
@@ -90,20 +94,6 @@ Positions
 - Team
 - Position
 
-## Démarrage
-```bash
-git clone https://github.com/<ton-user>/<ton-repo>.git
-cd <ton-repo>
-npm install
-npm run start:dev
-```
-
-##  Scripts utiles
-```bash
-npm run migrate       # Migration Prisma
-npm run studio        # Prisma Studio
-npm run build
-```
 
 ##  Variables d’environnement (.env)
 ```
@@ -172,11 +162,25 @@ NODE_ENV=
 PORT=
 
 ```
+## Démarrage
+```bash
+git clone https://github.com/SamiTelo/API-Football
+cd  API-Football
+npm install
+npm run start:dev
+```
+
+##  Scripts utiles
+```bash
+npm run migrate       # Migration Prisma
+npm run studio        # Prisma Studio
+npm run build
+```
 
 ##  Documentation
 Une documentation Swagger est disponible :
 ```
-http://localhost:3000/api
+http://localhost:3001/api
 ```
 
 ##  Auteur
