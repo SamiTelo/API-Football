@@ -1,0 +1,70 @@
+name: CI - NestJS API
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: root
+          POSTGRES_DB: test_club
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U root"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET_TEST }}
+      JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET_TEST }}
+      JWT_RESET_SECRET: ${{ secrets.JWT_RESET_SECRET_TEST }}
+      JWT_VERIFY_SECRET: ${{ secrets.JWT_VERIFY_SECRET_TEST }}
+      MAIL_FROM: ${{ secrets.MAIL_FROM_TEST }}
+      MAIL_USER: ${{ secrets.MAIL_USER_TEST }}
+      MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD_TEST }}
+      SUPERADMIN_EMAIL: ${{ secrets.SUPERADMIN_EMAIL_TEST }}
+      SUPERADMIN_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD_TEST }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Reset Test DB
+        run: npm run test:reset
+
+      - name: Run unit tests (Jest)
+        run: npm run test:unit
+
+      - name: Run e2e tests (Supertest)
+        run: npm run test:e2e:test
+
+      - name: Build NestJS
+        run: npm run build
+
+      - name: Docker build (optional)
+        run: docker build -t api-football .

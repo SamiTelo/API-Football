@@ -4,9 +4,9 @@ services:
   api:
     build: .
     ports:
-      - "3000:3000"
+      - "3002:${PORT}"
     env_file:
-      - .env
+      - .env.docker
     depends_on:
       - db
 
@@ -14,7 +14,7 @@ services:
     image: postgres:16-alpine
     restart: always
     env_file:
-      - .env
+      - .env.docker
     volumes:
       - db_data:/var/lib/postgresql/data
 

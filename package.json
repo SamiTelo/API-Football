@@ -17,7 +17,12 @@
     "test:watch": "jest --watch --config jest.config.ts",
     "test:cov": "jest --coverage --config jest.config.ts",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand --config jest.config.ts",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+
+    "test:reset": "cross-env NODE_ENV=test DATABASE_URL=postgresql://root:root@localhost:5432/test_club npx prisma migrate reset --force",
+    "test:unit": "cross-env NODE_ENV=test DATABASE_URL=postgresql://root:root@localhost:5432/test_club npm run test",
+    "test:e2e:test": "cross-env NODE_ENV=test DATABASE_URL=postgresql://root:root@localhost:5432/test_club npm run test:e2e",
+    "test:all": "npm run test:reset && npm run test:unit && npm run test:e2e:test"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

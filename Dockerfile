@@ -28,7 +28,8 @@ COPY --from=builder /app/dist ./dist
 COPY prisma ./prisma
 
 # Exposer le port
-EXPOSE 3001
+ENV PORT=3001
+EXPOSE $PORT
 
 # Définir la commande de lancement
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
