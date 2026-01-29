@@ -57,6 +57,9 @@ jobs:
       - name: Reset Test DB
         run: npm run test:reset
 
+      - name: Seed Test DB
+        run: npm run seed  
+
       - name: Run unit tests (Jest)
         run: npm run test:unit
 
