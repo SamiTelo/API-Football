@@ -26,18 +26,30 @@ jobs:
           --health-retries=5
 
     steps:
+      # -----------------------------
+      # Checkout code
+      # -----------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # -----------------------------
+      # Node.js
+      # -----------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
+      # -----------------------------
+      # Install dependencies
+      # -----------------------------
       - name: Install dependencies
         run: npm install
 
+      # -----------------------------
+      # Prisma generate
+      # -----------------------------
       - name: Prisma generate
         run: npx prisma generate
 
@@ -53,7 +65,7 @@ jobs:
           echo "JWT_RESET_SECRET=${{ secrets.JWT_RESET_SECRET_TEST }}" >> .env.test
           echo "JWT_VERIFY_SECRET=${{ secrets.JWT_VERIFY_SECRET_TEST }}" >> .env.test
           echo "MAIL_FROM=${{ secrets.MAIL_FROM_TEST }}" >> .env.test
-          echo "GMAIL_USER=${{ secrets.MAIL_USER_TEST }}" >> .env.test
+          echo "GMAIL_USER=${{ secrets.GMAIL_USER_TEST }}" >> .env.test
           echo "GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD_TEST }}" >> .env.test
           echo "FRONTEND_URL=https://mon-frontend-test.com" >> .env.test
           echo "SENTRY_DSN=https://7db3009f0acad40c98be38dcbfe325df@o4510425768460288.ingest.de.sentry.io/4510425773441104" >> .env.test
@@ -65,20 +77,50 @@ jobs:
           echo "PROMETHEUS_PORT=9090" >> .env.test
           echo "GRAFANA_PORT=3000" >> .env.test
 
+      # -----------------------------
+      # Reset Test DB
+      # -----------------------------
       - name: Reset Test DB
         run: npm run test:reset
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+          NODE_ENV: test
 
+      # -----------------------------
+      # Seed Test DB
+      # -----------------------------
       - name: Seed Test DB
-        run: npm run seed  
+        run: npm run seed
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+          NODE_ENV: test
 
+      # -----------------------------
+      # Unit tests
+      # -----------------------------
       - name: Run unit tests (Jest)
         run: npm run test:unit
+        env:
+          NODE_ENV: test
+          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
 
+      # -----------------------------
+      # E2E tests
+      # -----------------------------
       - name: Run e2e tests (Supertest)
         run: npm run test:e2e:test
+        env:
+          NODE_ENV: test
+          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
 
+      # -----------------------------
+      # Build NestJS
+      # -----------------------------
       - name: Build NestJS
         run: npm run build
 
-      - name: Docker build (optional)
+      # -----------------------------
+      # Docker build (optionnel)
+      # -----------------------------
+      - name: Docker build
         run: docker build -t api-football .
