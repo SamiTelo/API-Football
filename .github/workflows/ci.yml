@@ -96,7 +96,7 @@ jobs:
           NODE_ENV: test
 
       # -----------------------------
-      # Unit tests
+      # Run unit tests
       # -----------------------------
       - name: Run unit tests (Jest)
         run: npm run test:unit
@@ -105,7 +105,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
 
       # -----------------------------
-      # E2E tests
+      # Run e2e tests
       # -----------------------------
       - name: Run e2e tests (Supertest)
         run: npm run test:e2e:test
@@ -120,7 +120,20 @@ jobs:
         run: npm run build
 
       # -----------------------------
-      # Docker build (optionnel)
+      # Docker build
       # -----------------------------
       - name: Docker build
         run: docker build -t api-football .
+
+      # -----------------------------
+      # Test Docker container
+      # -----------------------------
+      - name: Run Docker Compose and check API health
+        run: |
+          docker-compose -f docker-compose.yml up -d db
+          docker-compose -f docker-compose.yml up -d api
+          echo "Waiting for API to start..."
+          sleep 10
+          curl -f http://localhost:3002/health
+        env:
+          PORT: 3002
