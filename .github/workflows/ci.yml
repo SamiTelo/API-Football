@@ -10,9 +10,6 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
-    # =============================
-    # PostgreSQL pour tests Node
-    # =============================
     services:
       postgres:
         image: postgres:16-alpine
@@ -30,7 +27,7 @@ jobs:
 
     steps:
       # -----------------------------
-      # Checkout
+      # Checkout code
       # -----------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -57,7 +54,7 @@ jobs:
         run: npx prisma generate
 
       # -----------------------------
-      # Create .env.test
+      # Générer le fichier .env.test
       # -----------------------------
       - name: Create .env.test
         run: |
@@ -71,36 +68,46 @@ jobs:
           echo "GMAIL_USER=${{ secrets.GMAIL_USER_TEST }}" >> .env.test
           echo "GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD_TEST }}" >> .env.test
           echo "FRONTEND_URL=https://mon-frontend-test.com" >> .env.test
-          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN_TEST }}" >> .env.test
+          echo "SENTRY_DSN=https://7db3009f0acad40c98be38dcbfe325df@o4510425768460288.ingest.de.sentry.io/4510425773441104" >> .env.test
           echo "SUPERADMIN_EMAIL=${{ secrets.SUPERADMIN_EMAIL_TEST }}" >> .env.test
           echo "SUPERADMIN_PASSWORD=${{ secrets.SUPERADMIN_PASSWORD_TEST }}" >> .env.test
+          echo "THROTTLE_TTL=900" >> .env.test
+          echo "THROTTLE_LIMIT=100" >> .env.test
           echo "PORT=3003" >> .env.test
+          echo "PROMETHEUS_PORT=9090" >> .env.test
+          echo "GRAFANA_PORT=3000" >> .env.test
 
       # -----------------------------
-      # Reset & Seed DB
+      # Reset Test DB
       # -----------------------------
       - name: Reset Test DB
         run: npm run test:reset
         env:
-          NODE_ENV: test
           DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+          NODE_ENV: test
 
+      # -----------------------------
+      # Seed Test DB
+      # -----------------------------
       - name: Seed Test DB
         run: npm run seed
         env:
-          NODE_ENV: test
           DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+          NODE_ENV: test
 
       # -----------------------------
-      # Tests
+      # Run unit tests
       # -----------------------------
-      - name: Run unit tests
+      - name: Run unit tests (Jest)
         run: npm run test:unit
         env:
           NODE_ENV: test
           DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
 
-      - name: Run e2e tests
+      # -----------------------------
+      # Run e2e tests
+      # -----------------------------
+      - name: Run e2e tests (Supertest)
         run: npm run test:e2e:test
         env:
           NODE_ENV: test
@@ -112,10 +119,15 @@ jobs:
       - name: Build NestJS
         run: npm run build
 
-      # =============================
-      # Docker container test
-      # =============================
+      # -----------------------------
+      # Docker build
+      # -----------------------------
+      - name: Docker build
+        run: docker build -t api-football .
 
+      # -----------------------------
+      # Test Docker container
+      # -----------------------------
       - name: Create .env.docker
         run: |
           echo "POSTGRES_USER=root" > .env.docker
@@ -128,7 +140,7 @@ jobs:
           echo "JWT_VERIFY_SECRET=${{ secrets.JWT_VERIFY_SECRET_TEST }}" >> .env.docker
           echo "NODE_ENV=production" >> .env.docker
           echo "PORT=3002" >> .env.docker
-          
+
       - name: Docker build
         run: docker build -t api-football .
 
