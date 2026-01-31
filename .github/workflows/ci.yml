@@ -117,10 +117,11 @@ jobs:
       - name: Create .env.docker
         run: |
           cat <<EOF > .env.docker
-          POSTGRES_USER=postgres
+          POSTGRES_USER=root
           POSTGRES_PASSWORD=postgres
           POSTGRES_DB=club
-          DATABASE_URL=postgresql://postgres:postgres@db:5432/club?schema=public
+
+          DATABASE_URL="postgresql://root:postgres@db:5432/club?schema=public"
           JWT_SECRET=${{ secrets.JWT_SECRET_TEST }}
           JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET_TEST }}
           JWT_RESET_SECRET=${{ secrets.JWT_RESET_SECRET_TEST }}
