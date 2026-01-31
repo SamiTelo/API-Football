@@ -1,26 +1,28 @@
+
+version: "3.9"
 services:
   db:
-    image: postgres:16-alpine
+    image: postgres:16
     restart: always
-    env_file:
-      - .env.docker
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: club
+    ports:
+      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U root"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   api:
     build: .
-    env_file:
-      - .env.docker
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/club?schema=public
     ports:
       - "3002:${PORT:-3002}"
     depends_on:
-      db:
-        condition: service_healthy
+      - db
 
 volumes:
   db_data:
+
