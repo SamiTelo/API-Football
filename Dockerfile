@@ -1,35 +1,46 @@
-# Étape 1 : Builder
-FROM node:20 AS builder
+# =========================
+#  STAGE BUILD
+# =========================
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copier package.json et package-lock.json
+# Dépendances système (Prisma)
+RUN apk add --no-cache openssl
+
+# Copier les fichiers npm
 COPY package*.json ./
 
 # Installer dépendances
 RUN npm install
 
-# Copier le reste du code
+# Copier le reste du projet
 COPY . .
 
-# Générer Prisma Client
+# Générer Prisma
 RUN npx prisma generate
 
-# Build NestJS
+# Build NestJS → crée dist/
 RUN npm run build
 
 # =========================
-# Étape 2 : Image finale
-FROM node:20
+#  STAGE PROD
+# =========================
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copier node_modules, dist et prisma depuis le builder
+RUN apk add --no-cache openssl
+
+# Copier seulement ce qui est nécessaire
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/package*.json ./
+COPY package*.json ./
 
-# Pas de COPY .env, on passera via docker-compose
-# CMD pour lancer NestJS
-CMD ["node", "dist/main.js"]
+# Port exposé
+EXPOSE 3002
+
+# Démarrage
+CMD ["node", "dist/src/main.js"]
+
