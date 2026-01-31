@@ -1,36 +1,38 @@
 # =========================
-# Builder
+# Étape 1 : Node pour build
 # =========================
-FROM node:20-slim AS builder
+FROM node:20-alpine AS builder
 
-RUN apt-get update -y && apt-get install -y openssl
+# Installer openssl pour Prisma
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
+# Copier les fichiers package pour installer deps
 COPY package*.json ./
 RUN npm install
 
+# Copier le reste des fichiers
 COPY . .
 
-RUN npx prisma generate
+# Build NestJS
 RUN npm run build
 
 # =========================
-# Runtime
+# Étape 2 : Image finale
 # =========================
-FROM node:20-slim
+FROM node:20-alpine
 
-RUN apt-get update -y && apt-get install -y openssl
+# Installer openssl pour Prisma
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
-COPY --from=builder /app/package*.json ./
+# Copier node_modules et dist depuis builder
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/package*.json ./
 
-ENV NODE_ENV=production
-ENV PORT=3002
-EXPOSE 3002
-
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+# Lancer l'app
+CMD ["node", "dist/main.js"]
