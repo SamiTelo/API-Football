@@ -10,10 +10,15 @@ WORKDIR /app
 
 # Copier les fichiers package pour installer deps
 COPY package*.json ./
+
+# Installer les dépendances
 RUN npm install
 
 # Copier le reste des fichiers
 COPY . .
+
+# Générer le client Prisma AVANT le build NestJS
+RUN npx prisma generate
 
 # Build NestJS
 RUN npm run build
@@ -28,7 +33,7 @@ RUN apk add --no-cache openssl
 
 WORKDIR /app
 
-# Copier node_modules et dist depuis builder
+# Copier node_modules, dist et Prisma depuis builder
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
