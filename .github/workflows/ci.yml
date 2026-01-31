@@ -10,6 +10,9 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
+    # =============================
+    # PostgreSQL pour tests Node
+    # =============================
     services:
       postgres:
         image: postgres:16-alpine
@@ -27,7 +30,7 @@ jobs:
 
     steps:
       # -----------------------------
-      # Checkout code
+      # Checkout
       # -----------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,7 +57,7 @@ jobs:
         run: npx prisma generate
 
       # -----------------------------
-      # Générer le fichier .env.test
+      # Create .env.test
       # -----------------------------
       - name: Create .env.test
         run: |
@@ -68,46 +71,36 @@ jobs:
           echo "GMAIL_USER=${{ secrets.GMAIL_USER_TEST }}" >> .env.test
           echo "GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD_TEST }}" >> .env.test
           echo "FRONTEND_URL=https://mon-frontend-test.com" >> .env.test
-          echo "SENTRY_DSN=https://7db3009f0acad40c98be38dcbfe325df@o4510425768460288.ingest.de.sentry.io/4510425773441104" >> .env.test
+          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN_TEST }}" >> .env.test
           echo "SUPERADMIN_EMAIL=${{ secrets.SUPERADMIN_EMAIL_TEST }}" >> .env.test
           echo "SUPERADMIN_PASSWORD=${{ secrets.SUPERADMIN_PASSWORD_TEST }}" >> .env.test
-          echo "THROTTLE_TTL=900" >> .env.test
-          echo "THROTTLE_LIMIT=100" >> .env.test
           echo "PORT=3003" >> .env.test
-          echo "PROMETHEUS_PORT=9090" >> .env.test
-          echo "GRAFANA_PORT=3000" >> .env.test
 
       # -----------------------------
-      # Reset Test DB
+      # Reset & Seed DB
       # -----------------------------
       - name: Reset Test DB
         run: npm run test:reset
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
           NODE_ENV: test
+          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
 
-      # -----------------------------
-      # Seed Test DB
-      # -----------------------------
       - name: Seed Test DB
         run: npm run seed
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
           NODE_ENV: test
+          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
 
       # -----------------------------
-      # Run unit tests
+      # Tests
       # -----------------------------
-      - name: Run unit tests (Jest)
+      - name: Run unit tests
         run: npm run test:unit
         env:
           NODE_ENV: test
           DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
 
-      # -----------------------------
-      # Run e2e tests
-      # -----------------------------
-      - name: Run e2e tests (Supertest)
+      - name: Run e2e tests
         run: npm run test:e2e:test
         env:
           NODE_ENV: test
@@ -119,21 +112,43 @@ jobs:
       - name: Build NestJS
         run: npm run build
 
-      # -----------------------------
-      # Docker build
-      # -----------------------------
+      # =============================
+      # Docker container test
+      # =============================
+
+      - name: Create .env.docker
+        run: |
+          echo "POSTGRES_USER=root" > .env.docker
+          echo "POSTGRES_PASSWORD=postgres" >> .env.docker
+          echo "POSTGRES_DB=club" >> .env.docker
+          echo "DATABASE_URL=postgresql://root:postgres@db:5432/club?schema=public" >> .env.docker
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET_TEST }}" >> .env.docker
+          echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET_TEST }}" >> .env.docker
+          echo "JWT_RESET_SECRET=${{ secrets.JWT_RESET_SECRET_TEST }}" >> .env.docker
+          echo "JWT_VERIFY_SECRET=${{ secrets.JWT_VERIFY_SECRET_TEST }}" >> .env.docker
+          echo "NODE_ENV=production" >> .env.docker
+          echo "PORT=3002" >> .env.docker
+          
       - name: Docker build
         run: docker build -t api-football .
 
-      # -----------------------------
-      # Test Docker container
-      # -----------------------------
-      - name: Run Docker Compose and check API health
+      - name: Run Docker Compose
+        run: docker compose up -d
+
+      - name: Check API health
         run: |
-          docker-compose -f docker-compose.yml up -d db
-          docker-compose -f docker-compose.yml up -d api
-          echo "Waiting for API to start..."
-          sleep 10
-          curl -f http://localhost:3002/health
-        env:
-          PORT: 3002
+          for i in {1..20}; do
+            if curl -s http://localhost:3002/health > /dev/null; then
+              echo "API OK "
+              exit 0
+            fi
+            echo "Waiting for API..."
+            sleep 5
+          done
+          echo "API failed "
+          docker compose logs
+          exit 1
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down
