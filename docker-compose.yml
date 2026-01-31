@@ -14,8 +14,8 @@ services:
   api:
     build: .
     restart: always
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/club?schema=public
+    env_file:
+      - .env.docker   
     ports:
       - "3002:${PORT:-3002}"
     depends_on:

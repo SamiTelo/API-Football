@@ -27,7 +27,7 @@ jobs:
 
     env:
       NODE_ENV: test
-      PORT: 3002   # 🔥 clé pour docker compose
+      PORT: 3003   
 
     steps:
       # -----------------------------
@@ -70,7 +70,7 @@ jobs:
           GMAIL_USER=${{ secrets.GMAIL_USER_TEST }}
           GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD_TEST }}
           FRONTEND_URL=https://mon-frontend-test.com
-          SENTRY_DSN=https://7db3009f0acad40c98be38dcbfe325df@o4510425768460288.ingest.de.sentry.io/4510425773441104
+          SENTRY_DSN=${{ secrets.SENTRY_DSN_TEST }}
           SUPERADMIN_EMAIL=${{ secrets.SUPERADMIN_EMAIL_TEST }}
           SUPERADMIN_PASSWORD=${{ secrets.SUPERADMIN_PASSWORD_TEST }}
           THROTTLE_TTL=900
@@ -126,6 +126,15 @@ jobs:
           JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET_TEST }}
           JWT_RESET_SECRET=${{ secrets.JWT_RESET_SECRET_TEST }}
           JWT_VERIFY_SECRET=${{ secrets.JWT_VERIFY_SECRET_TEST }}
+          MAIL_FROM=${{ secrets.MAIL_FROM_TEST }}
+          GMAIL_USER=${{ secrets.GMAIL_USER_TEST }}
+          GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD_TEST }}
+          FRONTEND_URL=https://mon-frontend-docker.com
+          SENTRY_DSN=${{ secrets.SENTRY_DSN_TEST }}
+          SUPERADMIN_EMAIL=${{ secrets.SUPERADMIN_EMAIL_TEST }}
+          SUPERADMIN_PASSWORD=${{ secrets.SUPERADMIN_PASSWORD_TEST }}
+          THROTTLE_TTL=900
+          THROTTLE_LIMIT=100
           NODE_ENV=production
           PORT=3002
           EOF
@@ -143,13 +152,13 @@ jobs:
         run: |
           for i in {1..20}; do
             if curl -sf http://localhost:3002/health; then
-              echo "API OK ✅"
+              echo "API OK"
               exit 0
             fi
             echo "Waiting for API..."
             sleep 5
           done
-          echo "API failed ❌"
+          echo "API failed"
           docker compose logs
           exit 1
 
