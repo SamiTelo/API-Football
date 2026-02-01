@@ -1,9 +1,6 @@
 # Dépendances locales
 node_modules
 
-# Build local
-dist
-
 # Environnement
 .env
 .env.*

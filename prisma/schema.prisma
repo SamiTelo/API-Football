@@ -31,36 +31,32 @@ model Position {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  lastName  String   @map("last_name")
-  firstName String   @map("first_name")
-  email     String   @unique
-  password  String
-  refreshToken  String?
-
-  roleId       Int?
-  role         Role?      @relation(fields: [roleId], references: [id])
-  isVerified   Boolean    @default(false)  //  verification email
-
-   // 2FA
+  id              Int       @id @default(autoincrement())
+  lastName        String    @map("last_name")
+  firstName       String    @map("first_name")
+  email           String    @unique
+  password        String
+  createdAt       DateTime  @default(now()) @map("created_at")
+  refreshToken    String?
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+  roleId          Int?
+  isVerified      Boolean   @default(false)
   twoFactorCode   String?
   twoFactorExpiry DateTime?
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @default(now()) @map("updated_at")
+  role            Role?     @relation(fields: [roleId], references: [id])
 }
 
 model Role {
-  id          Int           @id @default(autoincrement())
-  name        String        @unique
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
   users       User[]
-  permissions Permission[]  @relation("RolePermissions")
+  permissions Permission[] @relation("RolePermissions")
 }
 
 model Permission {
-  id    Int     @id @default(autoincrement())
-  name  String  @unique
-  roles Role[]  @relation("RolePermissions")
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  roles Role[] @relation("RolePermissions")
 }
 
 model SignupAttempt {
@@ -68,6 +64,3 @@ model SignupAttempt {
   ip        String
   createdAt DateTime @default(now())
 }
-
-
-

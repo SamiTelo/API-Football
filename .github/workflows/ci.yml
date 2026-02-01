@@ -1,0 +1,155 @@
+name: CI - NestJS API
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: root
+          POSTGRES_DB: test_club
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U root"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      NODE_ENV: test
+      PORT: 3003
+
+    steps:
+      # -----------------------------
+      # Checkout
+      # -----------------------------
+      - uses: actions/checkout@v4
+
+      # -----------------------------
+      # Node.js
+      # -----------------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # -----------------------------
+      # Install deps
+      # -----------------------------
+      - run: npm install
+
+      # -----------------------------
+      # Prisma
+      # -----------------------------
+      - run: npx prisma generate
+
+      # -----------------------------
+      # Create .env.test
+      # -----------------------------
+      - name: Create .env.test
+        run: |
+          cat <<EOF > .env.test
+          NODE_ENV=test
+          DATABASE_URL=${{ secrets.DATABASE_URL_TEST }}
+          JWT_SECRET=${{ secrets.JWT_SECRET_TEST }}
+          JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET_TEST }}
+          JWT_RESET_SECRET=${{ secrets.JWT_RESET_SECRET_TEST }}
+          JWT_VERIFY_SECRET=${{ secrets.JWT_VERIFY_SECRET_TEST }}
+          MAIL_FROM=${{ secrets.MAIL_FROM_TEST }}
+          GMAIL_USER=${{ secrets.GMAIL_USER_TEST }}
+          GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD_TEST }}
+          FRONTEND_URL=https://mon-frontend-test.com
+          SENTRY_DSN=${{ secrets.SENTRY_DSN_TEST }}
+          SUPERADMIN_EMAIL=${{ secrets.SUPERADMIN_EMAIL_TEST }}
+          SUPERADMIN_PASSWORD=${{ secrets.SUPERADMIN_PASSWORD_TEST }}
+          THROTTLE_TTL=900
+          THROTTLE_LIMIT=100
+          PORT=3003
+          EOF
+
+      # -----------------------------
+      # Reset + seed DB
+      # -----------------------------
+      - run: npm run test:reset
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+
+      - run: npm run seed
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+
+      # -----------------------------
+      # Tests
+      # -----------------------------
+      - run: npm run test:unit
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+
+      - run: npm run test:e2e:test
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+
+      # -----------------------------
+      # Build NestJS
+      # -----------------------------
+      - run: npm run build
+
+      # -----------------------------
+      # Docker build
+      # -----------------------------
+      - name: Docker build
+        run: docker build -t api-football .
+
+      # -----------------------------
+      # Docker Compose env
+      # -----------------------------
+      - name: Create .env.docker
+        run: |
+          cat <<EOF > .env.docker
+          POSTGRES_USER=postgres
+          POSTGRES_PASSWORD=postgres
+          POSTGRES_DB=club
+          DATABASE_URL=postgresql://postgres:postgres@db:5432/club?schema=public
+
+          JWT_SECRET=${{ secrets.JWT_SECRET_TEST }}
+          JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET_TEST }}
+          JWT_RESET_SECRET=${{ secrets.JWT_RESET_SECRET_TEST }}
+          JWT_VERIFY_SECRET=${{ secrets.JWT_VERIFY_SECRET_TEST }}
+          MAIL_FROM=${{ secrets.MAIL_FROM_TEST }}
+          GMAIL_USER=${{ secrets.GMAIL_USER_TEST }}
+          GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD_TEST }}
+          FRONTEND_URL=https://mon-frontend-docker.com
+          SENTRY_DSN=${{ secrets.SENTRY_DSN_TEST }}
+          SUPERADMIN_EMAIL=${{ secrets.SUPERADMIN_EMAIL_TEST }}
+          SUPERADMIN_PASSWORD=${{ secrets.SUPERADMIN_PASSWORD_TEST }}
+          THROTTLE_TTL=900
+          THROTTLE_LIMIT=100
+          NODE_ENV=production
+          PORT=3002
+          EOF
+
+      # -----------------------------
+      # Run Docker Compose
+      # -----------------------------
+      - name: Run Docker Compose
+        run: |
+          docker compose --env-file .env.docker up -d --build
+          docker compose ps
+
+      # -----------------------------
+      # Cleanup
+      # -----------------------------
+      - name: Stop containers
+        if: always()
+        run: docker compose --env-file .env.docker down

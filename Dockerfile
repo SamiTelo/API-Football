@@ -1,34 +1,46 @@
-# construire l'app
-FROM node:24-alpine AS builder
+# =========================
+#  STAGE BUILD
+# =========================
+FROM node:20-alpine AS builder
 
-# Créer le dossier de travail
 WORKDIR /app
 
-# Copier package.json et lockfile
+# Dépendances système (Prisma)
+RUN apk add --no-cache openssl
+
+# Copie les fichiers npm
 COPY package*.json ./
 
-# Installer les dépendances
+# Installe dépendances
 RUN npm install
 
-# Copier le reste du code
+# Copie le reste du projet
 COPY . .
 
-# Générer le build de production
+# Génére Prisma
+RUN npx prisma generate
+
+# Build NestJS → crée dist/
 RUN npm run build
 
-# image finale légère
-FROM node:24-alpine
+# =========================
+#  STAGE PROD
+# =========================
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copier seulement les fichiers nécessaires depuis le builder
-COPY --from=builder /app/package*.json ./
+# Neccessaire pour le healthcheck Docker
+RUN apk add --no-cache openssl curl
+
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
-COPY prisma ./prisma
+COPY --from=builder /app/prisma ./prisma
+COPY package*.json ./
 
-# Exposer le port
-EXPOSE 3001
+# Port exposé
+EXPOSE 3002
 
-# Définir la commande de lancement
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+# Démarrage
+CMD ["node", "dist/src/main.js"]
+
