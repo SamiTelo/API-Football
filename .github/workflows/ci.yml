@@ -90,7 +90,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
 
       # -----------------------------
-      # Tests jest & supertest
+      # Tests 
       # -----------------------------
       - run: npm run test:unit
         env:
