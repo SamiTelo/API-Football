@@ -8,16 +8,16 @@ WORKDIR /app
 # Dépendances système (Prisma)
 RUN apk add --no-cache openssl
 
-# Copier les fichiers npm
+# Copie les fichiers npm
 COPY package*.json ./
 
-# Installer dépendances
+# Installe dépendances
 RUN npm install
 
-# Copier le reste du projet
+# Copie le reste du projet
 COPY . .
 
-# Générer Prisma
+# Génére Prisma
 RUN npx prisma generate
 
 # Build NestJS → crée dist/
@@ -32,7 +32,6 @@ WORKDIR /app
 
 RUN apk add --no-cache openssl
 
-# Copier seulement ce qui est nécessaire
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
