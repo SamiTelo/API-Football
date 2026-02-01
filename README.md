@@ -42,13 +42,13 @@ Ce projet a été développé en utilisant une approche assistée par IA (GPT-5)
 - Sentry (errors & performance)
 - Gestions des joueur, equipe, poste etc..
 - Docker
+- CI/CD
+- Github Action
 
 ##  Fonctionnalités à venir (feature)
 - Upload de fichiers (images de joueurs, logos d’équipes, documents…)
 - Optimisation des performances (caching)
 - Ajout et mise en place de nouveaux modules métier
-- CI/CD
-- Github Action
 - etc...
 
 ##  Stack

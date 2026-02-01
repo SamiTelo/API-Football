@@ -59,7 +59,7 @@ jobs:
       # -----------------------------
       - name: Create .env.test
         run: |
-          cat <<EOF > .env.test
+          .env.test
           NODE_ENV=test
           DATABASE_URL=${{ secrets.DATABASE_URL_TEST }}
           JWT_SECRET=${{ secrets.JWT_SECRET_TEST }}
@@ -76,7 +76,6 @@ jobs:
           THROTTLE_TTL=900
           THROTTLE_LIMIT=100
           PORT=3003
-          EOF
 
       # -----------------------------
       # Reset + seed DB
@@ -116,7 +115,7 @@ jobs:
       # -----------------------------
       - name: Create .env.docker
         run: |
-          cat <<EOF > .env.docker
+          .env.docker
           POSTGRES_USER=postgres
           POSTGRES_PASSWORD=postgres
           POSTGRES_DB=club
@@ -137,7 +136,6 @@ jobs:
           THROTTLE_LIMIT=100
           NODE_ENV=production
           PORT=3002
-          EOF
 
       # -----------------------------
       # Run Docker Compose
