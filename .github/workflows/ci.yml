@@ -2,9 +2,9 @@ name: CI - NestJS API
 
 on:
   push:
-    branches: ["main"]
+    branches: ['main']
   pull_request:
-    branches: ["main"]
+    branches: ['main']
 
 jobs:
   ci:
@@ -27,7 +27,7 @@ jobs:
 
     env:
       NODE_ENV: test
-      PORT: 3003   
+      PORT: 3003
 
     steps:
       # -----------------------------
@@ -144,8 +144,7 @@ jobs:
       # -----------------------------
       - name: Run Docker Compose
         run: docker compose --env-file .env.docker up -d --build
-             docker compose ps
-
+          docker compose ps
 
       # -----------------------------
       # Cleanup
