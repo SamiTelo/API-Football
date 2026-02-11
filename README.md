@@ -46,8 +46,9 @@ Ce projet a été développé en utilisant une approche assistée par IA (GPT-5)
 - Github Action
 
 ##  Fonctionnalités à venir (feature)
-- Upload de fichiers (images de joueurs, logos d’équipes, documents…)
-- Optimisation des performances (caching)
+- Upload (Cloudinary storage) images de joueurs, logos d’équipes, documents… (en cours...)
+- Inscription & connexion sécurisées (AuthO)
+- Optimisation des performances caching (redis)
 - Ajout et mise en place de nouveaux modules métier
 - etc...
 
@@ -161,6 +162,13 @@ THROTTLE_LIMIT=
 NODE_ENV=
 PORT=
 
+# =========================
+# CLOUDINARY
+# =========================
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
 ```
 ## Démarrage
 ```bash
@@ -184,6 +192,6 @@ http://localhost:3001/api
 ```
 
 ##  Auteur
-**Samuel tiemtore**
-samueltiemtore10@gmail.com
+**Tiemtore Samuel**
+Email: [samueltiemtore10@gmail.com](mailto:samueltiemtore10@gmail.com)
 

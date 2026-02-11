@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model Player {
@@ -15,6 +16,10 @@ model Player {
   positionId Int      @map("position_id")
   position   Position @relation(fields: [positionId], references: [id])
   team       Team     @relation(fields: [teamId], references: [id])
+
+  // Picture player Cloudinary
+  imageUrl         String?  @map("image_url")
+  cloudinaryPublicId String? @map("cloudinary_public_id")
 }
 
 model Team {
@@ -22,6 +27,10 @@ model Team {
   name    String
   country String?
   player  Player[]
+
+  // Logo Cloudinary
+  logoUrl          String? @map("logo_url")
+  cloudinaryLogoId String? @map("cloudinary_logo_id")
 }
 
 model Position {

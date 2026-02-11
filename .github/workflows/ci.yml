@@ -75,6 +75,10 @@ jobs:
           echo "THROTTLE_TTL=900" >> .env.test
           echo "THROTTLE_LIMIT=100" >> .env.test
           echo "PORT=3003" >> .env.test
+          echo "CLOUDINARY_CLOUD_NAME=do3nd2woi" >> .env.test
+          echo "CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY_TEST }}" >> .env.test
+          echo "CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET_TEST }}" >> .env.test
+
 
       # -----------------------------
       # Reset + seed DB
@@ -133,6 +137,9 @@ jobs:
           echo "THROTTLE_LIMIT=100" >> .env.docker
           echo "NODE_ENV=production" >> .env.docker
           echo "PORT=3002" >> .env.docker
+          echo "CLOUDINARY_CLOUD_NAME=do3nd2woi" >> .env.docker
+          echo "CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY_TEST }}" >> .env.docker
+          echo "CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET_TEST }}" >> .env.docker
 
       # -----------------------------
       # Run Docker Compose

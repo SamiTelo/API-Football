@@ -32,7 +32,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   /* -----------------------------------------------
-   * REGISTER (email non vérifié)
+   * REGISTER (unverified email)
    ------------------------------------------------ */
   @Post('register')
   register(@Req() req: Request, @Body() dto: CreateUserDto) {
@@ -46,7 +46,7 @@ export class AuthController {
   }
 
   /* -----------------------------------------------
-   * VERIFICATION EMAIL
+   * EMAIL VERIFICATION
    ------------------------------------------------ */
   @Post('verify-email')
   async verifyEmail(@Body() dto: VerifyEmailDto) {
@@ -71,7 +71,7 @@ export class AuthController {
   }
 
   /* -----------------------------------------------
-   * LOGIN (bloqué si email non vérifié)
+   * LOGIN (blocked if email not verified)
    ------------------------------------------------ */
   // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
   @Throttle({ limit: 5, ttl: 60 })
@@ -82,12 +82,12 @@ export class AuthController {
   ) {
     const result = await this.authService.login(dto);
 
-    // Si 2FA est nécessaire
+    // If 2FA is required
     if ('twoFactorRequired' in result) {
-      return result; // renvoie { twoFactorRequired, userId }
+      return result; //returns { twoFactorRequired, userId }
     }
 
-    // Sinon, c'est un login normal
+    // Otherwise, it's a normal login
     const { access_token, refreshToken, user } = result;
 
     res.cookie('refreshToken', refreshToken, {

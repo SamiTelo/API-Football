@@ -1,5 +1,13 @@
-import { Body, Controller, Delete, Get, Patch, Post } from '@nestjs/common';
-import { ParseIntPipe, Param } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Patch,
+  Post,
+  ParseIntPipe,
+  Param,
+} from '@nestjs/common';
 import { TeamService } from './team.service';
 import { Team } from '@prisma/client';
 import { CreateTeamDto } from './dto/create-team.dto';
@@ -10,34 +18,46 @@ import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 export class TeamController {
   constructor(private readonly teamService: TeamService) {}
 
-  @Get('all')
+  //------------------------------------------------------------
+  // Afficher tout les teams
+  //------------------------------------------------------------
   @ApiOperation({ summary: 'Afficher toute les equipes' })
   @ApiResponse({ status: 200, description: 'Opération réussir' })
   @ApiResponse({ status: 404, description: 'Aucune equipe trouvé' })
+  @Get('all')
   getAllTeam(): Promise<Team[]> {
     return this.teamService.getAllTeam();
   }
 
-  @Get('/:id')
+  //------------------------------------------------------------
+  // Récupère une team à partir de son ID.
+  //------------------------------------------------------------
   @ApiOperation({ summary: "Afficher une equipe par son l'id" })
   @ApiResponse({ status: 200, description: 'Opération réussir' })
   @ApiResponse({ status: 404, description: 'Équipe non trouvée' })
+  @Get('/:id')
   getOneTeam(@Param('id', ParseIntPipe) id: number): Promise<Team> {
     return this.teamService.getOneTeam(id);
   }
 
-  @Post()
+  //---------------------------------------------------------------
+  // Créer une nouvelle équipe
+  //------------------------------------------------------------------
   @ApiOperation({ summary: "Création d'une nouvelle equipe" })
   @ApiResponse({ status: 200, description: 'Equipe créer avec succès' })
   @ApiResponse({ status: 404, description: "Création de l'equipe echoué" })
+  @Post()
   createTeam(@Body() data: CreateTeamDto): Promise<Team> {
     return this.teamService.createTeam(data);
   }
 
-  @Patch('/:id')
+  //--------------------------------------------------------------------------
+  // Mettre à jour une équipe
+  //---------------------------------------------------------------------------
   @ApiOperation({ summary: 'Mettre à jour une équipe' })
   @ApiResponse({ status: 200, description: 'Équipe mise à jour' })
   @ApiResponse({ status: 404, description: 'Équipe non trouvée' })
+  @Patch('/:id')
   updateTeam(
     @Param('id', ParseIntPipe) id: number,
     @Body() data: UpdapteTeamDto,
@@ -45,10 +65,13 @@ export class TeamController {
     return this.teamService.updateTeam(id, data);
   }
 
-  @Delete('/:id')
+  //---------------------------------------------------------------
+  // supprimer une team par son ID
+  //-------------------------------------------------------------
   @ApiOperation({ summary: 'Supprimer une equipe' })
   @ApiResponse({ status: 200, description: 'Equipe supprimer avec succès' })
   @ApiResponse({ status: 404, description: 'Équipe non trouvée' })
+  @Delete('/:id')
   deleteTeam(@Param('id', ParseIntPipe) id: number): Promise<Team> {
     return this.teamService.deleteTeam(id);
   }
