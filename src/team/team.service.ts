@@ -1,23 +1,28 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { Team } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTeamDto } from './dto/create-team.dto';
-import { BadRequestException } from '@nestjs/common';
 import { UpdapteTeamDto } from './dto/update-team.dto';
 
 @Injectable()
 export class TeamService {
   constructor(private readonly prisma: PrismaService) {}
 
+  //------------------------------------------------------------
   // Afficher tout les team
+  //------------------------------------------------------------
   async getAllTeam(): Promise<Team[]> {
     return this.prisma.team.findMany({});
   }
 
-  /**
+  /**--------------------------------------------------------------------
    * Récupère une team à partir de son ID.
    * Lance une erreur 404 si aucune position n'est trouvée.
-   */
+   -------------------------------------------------------------------------------*/
   async getOneTeam(id: number): Promise<Team> {
     // récupère l'id
     const team = await this.prisma.team.findUnique({
@@ -30,7 +35,9 @@ export class TeamService {
     return team;
   }
 
+  //---------------------------------------------------------------
   // Créer une nouvelle équipe
+  //------------------------------------------------------------------
   async createTeam(data: CreateTeamDto): Promise<Team> {
     // Vérifie si une équipe possède déjà ce nom
     const teamExist = await this.prisma.team.findFirst({
@@ -49,7 +56,9 @@ export class TeamService {
     });
   }
 
+  //--------------------------------------------------------------------------
   // Mettre à jour une équipe
+  //---------------------------------------------------------------------------
   async updateTeam(id: number, data: UpdapteTeamDto): Promise<Team> {
     // Vérifie si l'équipe existe
     await this.getOneTeam(id);
@@ -61,7 +70,9 @@ export class TeamService {
     });
   }
 
-  //supprimer une team apr son ID
+  //---------------------------------------------------------------
+  // supprimer une team par son ID
+  //-------------------------------------------------------------
   async deleteTeam(id: number): Promise<Team> {
     //verifie si une equipe existe deja avec cet ID
     await this.getOneTeam(id);

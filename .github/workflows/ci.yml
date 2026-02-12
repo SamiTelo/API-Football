@@ -1,13 +1,14 @@
-name: CI - NestJS API
+name: CI-NestJS API
 
 on:
   push:
     branches: ['main']
   pull_request:
-    branches: ['main']
+    branches: ['*']
 
 jobs:
   ci:
+    name: CI
     runs-on: ubuntu-latest
 
     services:
@@ -59,24 +60,26 @@ jobs:
       # -----------------------------
       - name: Create .env.test
         run: |
-          cat <<EOF > .env.test
-          NODE_ENV=test
-          DATABASE_URL=${{ secrets.DATABASE_URL_TEST }}
-          JWT_SECRET=${{ secrets.JWT_SECRET_TEST }}
-          JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET_TEST }}
-          JWT_RESET_SECRET=${{ secrets.JWT_RESET_SECRET_TEST }}
-          JWT_VERIFY_SECRET=${{ secrets.JWT_VERIFY_SECRET_TEST }}
-          MAIL_FROM=${{ secrets.MAIL_FROM_TEST }}
-          GMAIL_USER=${{ secrets.GMAIL_USER_TEST }}
-          GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD_TEST }}
-          FRONTEND_URL=https://mon-frontend-test.com
-          SENTRY_DSN=${{ secrets.SENTRY_DSN_TEST }}
-          SUPERADMIN_EMAIL=${{ secrets.SUPERADMIN_EMAIL_TEST }}
-          SUPERADMIN_PASSWORD=${{ secrets.SUPERADMIN_PASSWORD_TEST }}
-          THROTTLE_TTL=900
-          THROTTLE_LIMIT=100
-          PORT=3003
-          EOF
+          echo "NODE_ENV=test" > .env.test
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL_TEST }}" >> .env.test
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET_TEST }}" >> .env.test
+          echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET_TEST }}" >> .env.test
+          echo "JWT_RESET_SECRET=${{ secrets.JWT_RESET_SECRET_TEST }}" >> .env.test
+          echo "JWT_VERIFY_SECRET=${{ secrets.JWT_VERIFY_SECRET_TEST }}" >> .env.test
+          echo "MAIL_FROM=${{ secrets.MAIL_FROM_TEST }}" >> .env.test
+          echo "GMAIL_USER=${{ secrets.GMAIL_USER_TEST }}" >> .env.test
+          echo "GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD_TEST }}" >> .env.test
+          echo "FRONTEND_URL=https://mon-frontend-test.com" >> .env.test
+          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN_TEST }}" >> .env.test
+          echo "SUPERADMIN_EMAIL=${{ secrets.SUPERADMIN_EMAIL_TEST }}" >> .env.test
+          echo "SUPERADMIN_PASSWORD=${{ secrets.SUPERADMIN_PASSWORD_TEST }}" >> .env.test
+          echo "THROTTLE_TTL=900" >> .env.test
+          echo "THROTTLE_LIMIT=100" >> .env.test
+          echo "PORT=3003" >> .env.test
+          echo "CLOUDINARY_CLOUD_NAME=do3nd2woi" >> .env.test
+          echo "CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY_TEST }}" >> .env.test
+          echo "CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET_TEST }}" >> .env.test
+
 
       # -----------------------------
       # Reset + seed DB
@@ -116,28 +119,28 @@ jobs:
       # -----------------------------
       - name: Create .env.docker
         run: |
-          cat <<EOF > .env.docker
-          POSTGRES_USER=postgres
-          POSTGRES_PASSWORD=postgres
-          POSTGRES_DB=club
-          DATABASE_URL=postgresql://postgres:postgres@db:5432/club?schema=public
-
-          JWT_SECRET=${{ secrets.JWT_SECRET_TEST }}
-          JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET_TEST }}
-          JWT_RESET_SECRET=${{ secrets.JWT_RESET_SECRET_TEST }}
-          JWT_VERIFY_SECRET=${{ secrets.JWT_VERIFY_SECRET_TEST }}
-          MAIL_FROM=${{ secrets.MAIL_FROM_TEST }}
-          GMAIL_USER=${{ secrets.GMAIL_USER_TEST }}
-          GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD_TEST }}
-          FRONTEND_URL=https://mon-frontend-docker.com
-          SENTRY_DSN=${{ secrets.SENTRY_DSN_TEST }}
-          SUPERADMIN_EMAIL=${{ secrets.SUPERADMIN_EMAIL_TEST }}
-          SUPERADMIN_PASSWORD=${{ secrets.SUPERADMIN_PASSWORD_TEST }}
-          THROTTLE_TTL=900
-          THROTTLE_LIMIT=100
-          NODE_ENV=production
-          PORT=3002
-          EOF
+          echo "POSTGRES_USER=postgres" > .env.docker
+          echo "POSTGRES_PASSWORD=postgres" >> .env.docker
+          echo "POSTGRES_DB=club" >> .env.docker
+          echo "DATABASE_URL=postgresql://postgres:postgres@db:5432/club?schema=public" >> .env.docker
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET_TEST }}" >> .env.docker
+          echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET_TEST }}" >> .env.docker
+          echo "JWT_RESET_SECRET=${{ secrets.JWT_RESET_SECRET_TEST }}" >> .env.docker
+          echo "JWT_VERIFY_SECRET=${{ secrets.JWT_VERIFY_SECRET_TEST }}" >> .env.docker
+          echo "MAIL_FROM=${{ secrets.MAIL_FROM_TEST }}" >> .env.docker
+          echo "GMAIL_USER=${{ secrets.GMAIL_USER_TEST }}" >> .env.docker
+          echo "GMAIL_APP_PASSWORD=${{ secrets.GMAIL_APP_PASSWORD_TEST }}" >> .env.docker
+          echo "FRONTEND_URL=https://mon-frontend-docker.com" >> .env.docker
+          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN_TEST }}" >> .env.docker
+          echo "SUPERADMIN_EMAIL=${{ secrets.SUPERADMIN_EMAIL_TEST }}" >> .env.docker
+          echo "SUPERADMIN_PASSWORD=${{ secrets.SUPERADMIN_PASSWORD_TEST }}" >> .env.docker
+          echo "THROTTLE_TTL=900" >> .env.docker
+          echo "THROTTLE_LIMIT=100" >> .env.docker
+          echo "NODE_ENV=production" >> .env.docker
+          echo "PORT=3002" >> .env.docker
+          echo "CLOUDINARY_CLOUD_NAME=do3nd2woi" >> .env.docker
+          echo "CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY_TEST }}" >> .env.docker
+          echo "CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET_TEST }}" >> .env.docker
 
       # -----------------------------
       # Run Docker Compose

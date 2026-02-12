@@ -24,4 +24,8 @@ export const envValidationSchema = Joi.object({
   PORT: Joi.number().default(3001),
 
   SENTRY_DSN: Joi.string().uri().required(),
+
+  CLOUDINARY_CLOUD_NAME: Joi.string().required(),
+  CLOUDINARY_API_KEY: Joi.string().required(),
+  CLOUDINARY_API_SECRET: Joi.string().required(),
 });
