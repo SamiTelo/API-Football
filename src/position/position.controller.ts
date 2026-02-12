@@ -1,70 +1,69 @@
-import { Controller, Delete, Get, Post, Patch } from '@nestjs/common';
-import { Body, Param, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { PositionService } from './position.service';
 import { Position } from '@prisma/client';
 import { CreatePositionDto } from './dto/create-position.dto';
 import { UpdatePositionDto } from './dto/update-position.dto';
+import { ApiOperation } from '@nestjs/swagger';
 
-/**
- * Le prefixe 'position' sera ajouté à toutes les routes définies ici.
- */
 @Controller('position')
 export class PositionController {
-  /**
-   * Injection du PositionService.
-   * Cela permet d’accéder aux méthodes (CRUD) liées aux Positions.
-   */
   constructor(private readonly positionService: PositionService) {}
 
-  /**
+  /*--------------------------------------------------------
    * GET /position/all
    * Récupère la liste complète des positions.
-   */
+   ---------------------------------------------------------------*/
+  @ApiOperation({ summary: 'Afficher toute les post' })
   @Get('/all')
   getAllPositions(): Promise<Position[]> {
     return this.positionService.getAllPositions();
   }
 
-  /**
+  /*-------------------------------------------------------------------------
    * GET /position/:id
    * Récupère une position par son ID.
-   * @param id - identifiant numérique validé par ParseIntPipe
-   */
+   ---------------------------------------------------------------------*/
+  @ApiOperation({ summary: 'Afficher un post' })
   @Get('/:id')
   getOnePosition(@Param('id', ParseIntPipe) id: number): Promise<Position> {
     return this.positionService.getOnePosition(id);
   }
 
-  /**
+  /*---------------------------------------------------------------------------
    * POST /position
    * Crée une nouvelle position.
-   * @Body() data - validé par CreatePositionDto (class-validator)
-   * @returns Promise<Position>
-   */
+   --------------------------------------------------------------------------------*/
+  @ApiOperation({ summary: 'Enregistrer un post' })
   @Post()
   createPosition(@Body() data: CreatePositionDto): Promise<Position> {
     return this.positionService.createPosition(data);
   }
 
-  /**
+  /*----------------------------------------------------------------------------
    * DELETE /position/:id
    * Supprime une position par son ID.
-   * @param id - identifiant numérique validé par ParseIntPipe
-   * @returns Promise<Position>
-   */
+   ---------------------------------------------------------------------------------*/
+  @ApiOperation({ summary: 'Supprimer un post' })
   @Delete('/:id')
   deletePosition(@Param('id', ParseIntPipe) id: number): Promise<Position> {
     return this.positionService.deletePosition(id);
   }
 
-  /**
+  /*-----------------------------------------------------------------------------
    * PATCH /position/:id
    * Met à jour une position existante.
    * PATCH est utilisé car cela représente une mise à jour partielle.
-   * @param id - identifiant numérique
-   * @Body() data - validé par UpdatePositionDto
-   * @returns Promise<Position>
-   */
+   --------------------------------------------------------------------------------*/
+  @ApiOperation({ summary: 'Mettre à jour un post' })
   @Patch('/:id')
   updatePosition(
     @Param('id', ParseIntPipe) id: number,

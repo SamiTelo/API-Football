@@ -178,11 +178,12 @@ describe('register', () => {
     ).rejects.toThrow(Error);
   });
 });
+
 //==================================================
 // LOGIN
 //==================================================
-// Test Utilisateur inexistant
-describe('utilisateur inexistant', () => {
+// Nonexistent User Test
+describe('Nonexistent User', () => {
   it('doit échouer si utilisateur introuvable', async () => {
     prismaMock.user.findUnique.mockResolvedValue(null);
 
@@ -192,8 +193,8 @@ describe('utilisateur inexistant', () => {
   });
 });
 
-// Test Email non vérifié
-describe('email non vérifié', () => {
+// Unverified Test Email
+describe('unverified email', () => {
   it('doit échouer si email non vérifié', async () => {
     prismaMock.user.findUnique.mockResolvedValue({
       id: 1,
@@ -209,8 +210,8 @@ describe('email non vérifié', () => {
   });
 });
 
-// Test Mot de passe invalide
-describe('mot de passe invalide', () => {
+// Test Invalid password
+describe('Invalid password', () => {
   it('doit échouer si mot de passe incorrect', async () => {
     prismaMock.user.findUnique.mockResolvedValue({
       id: 1,
@@ -228,8 +229,8 @@ describe('mot de passe invalide', () => {
   });
 });
 
-// Test Login OK (USER, sans 2FA)
-describe('login OK (USER, sans 2FA)', () => {
+// Test Login OK (USER, without 2FA)
+describe('login OK (USER, without 2FA)', () => {
   it('doit retourner les tokens si login valide (USER)', async () => {
     prismaMock.user.findUnique.mockResolvedValue({
       id: 1,
@@ -264,8 +265,8 @@ describe('login OK (USER, sans 2FA)', () => {
   });
 });
 
-// Test Login ADMIN → 2FA requis
-describe('login ADMIN → 2FA requis', () => {
+// Test Login ADMIN → 2FA required
+describe('login ADMIN → 2FA required', () => {
   it('doit demander le 2FA pour un ADMIN', async () => {
     prismaMock.user.findUnique.mockResolvedValue({
       id: 2,
@@ -311,7 +312,7 @@ describe('verifyEmail', () => {
 //==================================================
 // VERIFY 2FA
 //==================================================
-// Code invalidde
+// Invalid code
 describe('2FA invalide', () => {
   it('doit échouer si code 2FA invalide', async () => {
     prismaMock.user.findUnique.mockResolvedValue({
@@ -326,7 +327,7 @@ describe('2FA invalide', () => {
     );
   });
 });
-// Code validde
+// Valid code
 describe('2FA valide', () => {
   it('doit valider le 2FA et retourner les tokens', async () => {
     prismaMock.user.findUnique.mockResolvedValue({

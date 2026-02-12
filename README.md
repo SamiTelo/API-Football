@@ -1,6 +1,6 @@
 ## Backend API – NestJS + Prisma + Auth + CRUD Football club
 
-API backend complète construite avec NestJS, Prisma, PostgreSQL, sécurisée avec JWT, Refresh Tokens, Roles & Permissions, et comprenant des modules métier (Players, Teams, Positions).
+API backend complète construite avec NestJS, Prisma, PostgreSQL, sécurisée avec JWT, Refresh Tokens, Roles & Permissions, et comprenant des modules métier (Players, Teams, Positions) etc...
 Inclut également du monitoring (Prometheus + Grafana) et du tracking d’erreurs (Sentry).
 
 **NB :** 
@@ -36,18 +36,20 @@ Ce projet a été développé en utilisant une approche assistée par IA (GPT-5)
 - Guards d’autorisation (JwtAuthGuard, RolesGuard)
 - Permissions associées aux rôles
 - Tentatives d’inscription enregistrées (SignupAttempt)
-- Rate limiting (anti brute-force)
+- Rate limiting avec Throtller (anti brute-force)
 - Monitoring Prometheus + Grafana
 - Logs structurés (Winston)
 - Sentry (errors & performance)
 - Gestions des joueur, equipe, poste etc..
+- Upload (Cloudinary storage) images de joueurs, logos d’équipes, documents…
+- Test unitaire jest et E2E supertest
 - Docker
 - CI/CD
 - Github Action
 
 ##  Fonctionnalités à venir (feature)
-- Upload de fichiers (images de joueurs, logos d’équipes, documents…)
-- Optimisation des performances (caching)
+- Optimisation des performances (redis) caching  (en cours...)
+- Inscription & connexion sécurisées (AuthO)
 - Ajout et mise en place de nouveaux modules métier
 - etc...
 
@@ -161,6 +163,13 @@ THROTTLE_LIMIT=
 NODE_ENV=
 PORT=
 
+# =========================
+# CLOUDINARY
+# =========================
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
 ```
 ## Démarrage
 ```bash
@@ -184,6 +193,6 @@ http://localhost:3001/api
 ```
 
 ##  Auteur
-**Samuel tiemtore**
-samueltiemtore10@gmail.com
+**Tiemtore Samuel**
+Email: [samueltiemtore10@gmail.com](mailto:samueltiemtore10@gmail.com)
 

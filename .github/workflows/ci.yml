@@ -1,13 +1,14 @@
-name: CI - NestJS API
+name: CI-NestJS API
 
 on:
   push:
     branches: ['main']
   pull_request:
-    branches: ['main']
+    branches: ['*']
 
 jobs:
   ci:
+    name: CI
     runs-on: ubuntu-latest
 
     services:
@@ -75,6 +76,13 @@ jobs:
           echo "THROTTLE_TTL=900" >> .env.test
           echo "THROTTLE_LIMIT=100" >> .env.test
           echo "PORT=3003" >> .env.test
+<<<<<<< HEAD
+=======
+          echo "CLOUDINARY_CLOUD_NAME=do3nd2woi" >> .env.test
+          echo "CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY_TEST }}" >> .env.test
+          echo "CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET_TEST }}" >> .env.test
+
+>>>>>>> fb0921dc3a4cbffd9c3ea6c6268fc064299ed0c0
 
       # -----------------------------
       # Reset + seed DB
@@ -133,6 +141,12 @@ jobs:
           echo "THROTTLE_LIMIT=100" >> .env.docker
           echo "NODE_ENV=production" >> .env.docker
           echo "PORT=3002" >> .env.docker
+<<<<<<< HEAD
+=======
+          echo "CLOUDINARY_CLOUD_NAME=do3nd2woi" >> .env.docker
+          echo "CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY_TEST }}" >> .env.docker
+          echo "CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET_TEST }}" >> .env.docker
+>>>>>>> fb0921dc3a4cbffd9c3ea6c6268fc064299ed0c0
 
       # -----------------------------
       # Run Docker Compose

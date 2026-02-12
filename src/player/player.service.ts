@@ -8,7 +8,9 @@ import { UpdatePlayerDto } from './dto/update-player.dto';
 export class PlayerService {
   constructor(private readonly prisma: PrismaService) {}
 
-  //recupere tout les joueurs
+  //-----------------------------------------------------------
+  //  recupere tout les joueurs
+  //-------------------------------------------------------------
   async getAllplayer(page = 1, limit = 10): Promise<Player[]> {
     // pagination affiche les 10 premier joueur
     return this.prisma.player.findMany({
@@ -21,7 +23,9 @@ export class PlayerService {
     });
   }
 
-  //recupere un joueur par l'id
+  //-------------------------------------------------------------------------------
+  //  recupere un joueur par l'id
+  //-------------------------------------------------------------------------
   async getOnePlayer(id: number): Promise<Player> {
     // Recherche le joueur dans la base
     const player = await this.prisma.player.findUnique({
@@ -37,7 +41,9 @@ export class PlayerService {
     return player;
   }
 
-  // recupere tout les joueur par post (postionId)
+  //---------------------------------------------------------------------------
+  //  recupere tout les joueur par post (postionId)
+  //------------------------------------------------------------------------------
   async getAllPlayerByPosition(positionId: number): Promise<Player[]> {
     // Recherche tous les joueurs ayant cette position
     const players = await this.prisma.player.findMany({
@@ -55,7 +61,9 @@ export class PlayerService {
     return players;
   }
 
-  // recupere tout les joueur par equipe (teamId)
+  //------------------------------------------------------------------------
+  //  recupere tout les joueur par equipe (teamId)
+  //------------------------------------------------------------------------
   async getAllPlayerByteam(teamId: number): Promise<Player[]> {
     // Recherche tous les joueurs appartenant a cette equipe
     const players = await this.prisma.player.findMany({
@@ -71,14 +79,18 @@ export class PlayerService {
     return players;
   }
 
-  //creer un nouveau joueur
+  //---------------------------------------------------------------------------
+  //  creer un nouveau joueur
+  //-------------------------------------------------------------------------
   async createPlayer(data: CreatePlayerDto): Promise<Player> {
     return this.prisma.player.create({
       data,
     });
   }
 
-  // mettre a jour un joueur
+  //------------------------------------------------------------------------------
+  //   mettre a jour un joueur
+  //------------------------------------------------------------------------------
   async upadtePlayer(id: number, data: UpdatePlayerDto): Promise<Player> {
     //  verifie si un joueur existe avec cet id
     await this.getOnePlayer(id);
@@ -89,7 +101,9 @@ export class PlayerService {
     });
   }
 
+  //---------------------------------------------------------------------------
   // suprimer un joueur
+  //--------------------------------------------------------------------
   async deletePlayer(id: number): Promise<Player> {
     // verifie si un joueur existe avant de supprimer
     await this.getOnePlayer(id);
