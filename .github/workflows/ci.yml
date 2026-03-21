@@ -80,7 +80,6 @@ jobs:
           echo "CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY_TEST }}" >> .env.test
           echo "CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET_TEST }}" >> .env.test
 
-
       # -----------------------------
       # Reset + seed DB
       # -----------------------------
