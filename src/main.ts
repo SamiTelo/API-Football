@@ -9,7 +9,7 @@ import * as dotenv from 'dotenv';
 // Charge l'environnement correspondant
 const env = process.env.NODE_ENV || 'development';
 
-// Charge automatiquement le bon fichier : .env.development ou .env.production
+// Charge automatiquement
 dotenv.config({ path: `.env.${env}` });
 
 async function bootstrap() {
@@ -17,6 +17,8 @@ async function bootstrap() {
 
   // Création de l'application NestJS
   const app = await NestFactory.create(AppModule);
+
+  app.setGlobalPrefix('api');
 
   // Interceptor global Sentry
   app.useGlobalInterceptors(app.get(SentryInterceptor));
@@ -26,7 +28,7 @@ async function bootstrap() {
 
   // CORS (frontend)
   app.enableCors({
-    origin: 'http://localhost:3000', // changer selon ton frontend
+    origin: 'http://localhost:3004',
     credentials: true,
   });
 
@@ -46,15 +48,15 @@ async function bootstrap() {
     .addTag('football')
     .addBearerAuth(
       {
-        type: 'http', // obligatoire, standard OpenAPI
-        scheme: 'bearer', // « Authorization: Bearer <token> »
-        bearerFormat: 'JWT', // optionnel mais clair pour Swagger
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
       },
-      'access-token', // nom du security scheme → important si tu as plusieurs guards
+      'access-token', // nom du security scheme
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('docs', app, document);
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
