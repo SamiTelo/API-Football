@@ -10,7 +10,9 @@ import * as dotenv from 'dotenv';
 const env = process.env.NODE_ENV || 'development';
 
 // Charge automatiquement
-dotenv.config({ path: `.env.${env}` });
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: `.env.${env}` });
+}
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -21,14 +23,18 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // Interceptor global Sentry
-  app.useGlobalInterceptors(app.get(SentryInterceptor));
+  app.useGlobalInterceptors(new SentryInterceptor());
 
   // Gestion des cookies
   app.use(cookieParser());
 
   // CORS (frontend)
   app.enableCors({
-    origin: 'http://localhost:3004',
+    origin: [
+      'http://localhost:3004', // frontend local
+      'http://localhost:3000',
+      'https://dashboard-football-club.vercel.app', // frontend déployé
+    ],
     credentials: true,
   });
 
