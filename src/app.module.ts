@@ -19,6 +19,7 @@ import { LoggingThrottlerGuard } from './guards/logging-throttler.guard';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { SentryTracingModule } from './sentry/sentry-tracing.module';
 import { UploadModule } from './upload/upload.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { UploadModule } from './upload/upload.module';
     PlayerModule,
     AuthModule,
     SentryTracingModule,
+    HealthModule,
   ],
   providers: [
     {
