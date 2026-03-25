@@ -4,7 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Express } from 'express';
 import cloudinary from 'src/config/cloudinary.config';
 
 @Injectable()
