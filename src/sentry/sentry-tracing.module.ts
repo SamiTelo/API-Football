@@ -4,14 +4,13 @@ import { SentryModule } from '@sentry/nestjs/setup';
 import { ConfigModule } from '@nestjs/config';
 import { SentryService } from './sentry.service';
 import { SentryInterceptor } from './sentry.interceptor';
-import { SentryController } from './sentry.controller';
 
 @Module({
   imports: [
     ConfigModule, // Pour SentryService
     SentryModule.forRoot(), // Objet vide, SentryService gère l'init
   ],
-  controllers: [SentryController],
+  controllers: [],
   providers: [
     SentryService,
     SentryInterceptor, // <-- ajoute de SentryInterceptor
