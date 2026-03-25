@@ -23,6 +23,7 @@ import {
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { cloudinaryStorage } from './cloudinary.storage';
 import { UploadImageDto } from './dto/upload-image.dto';
+import { Express } from 'express';
 
 @ApiTags('Upload')
 @Controller('upload')
