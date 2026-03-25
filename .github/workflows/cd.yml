@@ -3,7 +3,7 @@ name: CD-Deploy API
 permissions:
   contents: read
   deployments: write
-  
+
 on:
   workflow_run:
     workflows: ["CI-NestJS API"]
@@ -20,7 +20,6 @@ jobs:
       github.event.workflow_run.head_branch == 'main'
 
     steps:
-
       # ---------------------------------------------
       # 1. Create GitHub Deployment
       # ---------------------------------------------
@@ -30,26 +29,15 @@ jobs:
         with:
           script: |
             const res = await github.rest.repos.createDeployment({
-
-      - name: Trigger Render Deploy
-        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
-
-      - name: Create GitHub Deployment
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.repos.createDeployment({
-
               owner: context.repo.owner,
               repo: context.repo.repo,
               ref: context.payload.workflow_run.head_sha,
               environment: "production",
               auto_merge: false,
               required_contexts: []
-
             });
 
-            return res.data.id;
+            core.setOutput("deployment_id", res.data.id);
 
       # ---------------------------------------------
       # 2. Trigger Render Deploy
@@ -58,9 +46,10 @@ jobs:
         run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
 
       # ---------------------------------------------
-      # 3. Wait + Retry Healthcheck
-      # ------------------------------------------
-      - name: Wait for Render deploy
+      # 3. Healthcheck (REQUIRED for status control)
+      # ---------------------------------------------
+      - name: Healthcheck
+        id: health
         run: |
           for i in {1..10}; do
             echo "Attempt $i"
@@ -74,20 +63,20 @@ jobs:
 
       # ---------------------------------------------
       # 4. Update GitHub Deployment Status
-      # ------------------------------------------
+      # ---------------------------------------------
       - name: Update Deployment Status
-        if: always()
+        if: steps.health.outcome == 'success'
         uses: actions/github-script@v7
         with:
           script: |
-            const state = "${{ job.status }}" === "success" ? "success" : "failure";
+            const state = "success";
+
+            const deploymentId = Number("${{ steps.deployment.outputs.deployment_id }}");
 
             await github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              deployment_id: Number("${{ steps.deployment.outputs.result }}"),
+              deployment_id: deploymentId,
               state: state,
               environment_url: "https://api-football-gfpz.onrender.com"
             });
-
-            })
