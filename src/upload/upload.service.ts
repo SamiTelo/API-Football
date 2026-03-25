@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import cloudinary from 'src/config/cloudinary.config';
+import { Express } from 'express';
 
 @Injectable()
 export class UploadService {
