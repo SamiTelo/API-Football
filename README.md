@@ -69,6 +69,17 @@ Ce projet a été développé en utilisant une approche assistée par IA (GPT-5)
 - **Prometheus / Grafana**
 - **Throtller**
 - **Gmail service mail ou sendGrid**
+
+
+## Infrastructure
+
+Backend API deployer sur **Render**
+Production URL: https://api-football-gfpz.onrender.com
+
+- Hosting: Render
+- Database: PostgreSQL (Render)
+- CI/CD: GitHub Actions
+- Environment: Production-ready
   
 
 ##  Modules métier – CRUD complet
@@ -189,7 +200,7 @@ npm run build
 ##  Documentation
 Une documentation Swagger est disponible :
 ```
-http://localhost:3001/api
+https://api-football-gfpz.onrender.com/api/docs
 ```
 
 ##  Auteur
