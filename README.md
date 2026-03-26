@@ -200,7 +200,7 @@ npm run build
 ##  Documentation
 Une documentation Swagger est disponible :
 ```
-https://api-football-gfpz.onrender.com/api/docs
+https://api-football-gfpz.onrender.com/docs
 ```
 
 ##  Auteur
