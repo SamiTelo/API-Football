@@ -24,9 +24,8 @@ export class MailService {
     this.transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 587,
-      secure: false,
+      secure: false, // false = STARTTLS
       auth: { user, pass },
-      tls: { ciphers: 'SSLv3' },
     });
 
     this.logger.log(`Gmail SMTP initialized with user=${user}`);
