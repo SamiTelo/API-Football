@@ -32,6 +32,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3004', // frontend local
+      'http://localhost:3005', // frontend prod local
       'http://localhost:3000',
       'https://dashboard-football-club.vercel.app', // frontend déployé
     ],
