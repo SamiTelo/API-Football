@@ -13,33 +13,38 @@ export class MailService {
   private transporter: Transporter;
 
   constructor(private configService: ConfigService) {
-    const user = this.configService.get<string>('GMAIL_USER');
-    const pass = this.configService.get<string>('GMAIL_APP_PASSWORD');
-    this.from = this.configService.get<string>('MAIL_FROM')!;
+    const host = this.configService.get<string>('MAIL_HOST');
+    const port = Number(this.configService.get<string>('MAIL_PORT'));
+    const secure = this.configService.get<string>('MAIL_SECURE') === 'true';
+    const user = this.configService.get<string>('MAIL_USER');
+    const pass = this.configService.get<string>('MAIL_PASSWORD');
+    const from = this.configService.get<string>('MAIL_FROM');
 
-    if (!user || !pass) {
-      throw new Error('GMAIL_USER ou GMAIL_APP_PASSWORD non défini dans .env');
+    if (!host || !port || !user || !pass || !from) {
+      throw new Error('SMTP configuration is missing in environment variables');
     }
-    //  Configuration Gmail SMTP
+
+    this.from = from;
+
     this.transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // false = STARTTLS
+      host,
+      port,
+      secure,
       auth: { user, pass },
     });
 
-    this.logger.log(`Gmail SMTP initialized with user=${user}`);
+    this.logger.log(`SMTP initialized with host=${host} and user=${user}`);
   }
 
   async sendMail(to: string, subject: string, html: string) {
     try {
       await this.transporter.sendMail({
-        from: `"MonApp" <${this.from}>`,
+        from: `"Football Club" <${this.from}>`,
         to,
         subject,
         html,
       });
-      //  Logging en dev
+
       this.logger.log(`Email sent to ${to} with subject "${subject}"`);
     } catch (error) {
       this.logger.error('Error sending email', error);
