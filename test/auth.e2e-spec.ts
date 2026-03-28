@@ -6,6 +6,7 @@ import { PrismaService } from '../src/prisma/prisma.service';
 import cookieParser from 'cookie-parser';
 import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { MailService } from 'src/mail/mail.service';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
@@ -24,7 +25,13 @@ describe('AuthController (e2e)', () => {
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      // Mock global du MailService
+      .overrideProvider(MailService)
+      .useValue({
+        sendMail: jest.fn().mockResolvedValue(true), // envoie simulé
+      })
+      .compile();
 
     app = moduleRef.createNestApplication();
     app.use(cookieParser());
@@ -81,7 +88,8 @@ describe('AuthController (e2e)', () => {
   * FERMETURE DE L'APPLICATION 
   ------------------------------------------------- */
   afterAll(async () => {
-    await app.close();
+    await prisma.$disconnect(); // ferme Prisma
+    await app.close(); // ferme Nest
   });
 
   /* ------------------------------------------------ 
