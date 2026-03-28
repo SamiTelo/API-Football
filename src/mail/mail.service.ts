@@ -9,6 +9,7 @@ import axios from 'axios';
 @Injectable()
 export class MailService {
   private readonly from: string;
+  private readonly apiKey: string;
   private readonly logger = new Logger(MailService.name);
 
   constructor(private configService: ConfigService) {
@@ -22,12 +23,14 @@ export class MailService {
     }
 
     this.from = from;
+    this.apiKey = apiKey;
+
     this.logger.log(`MailService initialized with sender=${this.from}`);
   }
 
   async sendMail(to: string, subject: string, html: string) {
     try {
-      await axios.post(
+      const response = await axios.post(
         'https://api.brevo.com/v3/smtp/email',
         {
           sender: { email: this.from },
@@ -37,15 +40,22 @@ export class MailService {
         },
         {
           headers: {
-            'api-key': this.configService.get<string>('BREVO_API_KEY'),
+            'api-key': this.apiKey,
             'Content-Type': 'application/json',
           },
+          timeout: 5000,
         },
       );
 
       this.logger.log(`Email sent to ${to} with subject "${subject}"`);
-    } catch (error) {
-      this.logger.error('Error sending email via Brevo API', error);
+      this.logger.debug(`Brevo response: ${JSON.stringify(response.data)}`);
+    } catch (error: unknown) {
+      // fallback safe
+      const message =
+        error instanceof Error ? error.message : JSON.stringify(error);
+
+      this.logger.error('Error sending email via Brevo API', message);
+
       throw new InternalServerErrorException("Impossible d'envoyer l'email");
     }
   }
