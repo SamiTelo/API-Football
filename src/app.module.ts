@@ -26,7 +26,8 @@ import { HealthModule } from './health/health.module';
     // validation global de mes env au demarrage
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
+      // Ignore les fichiers .env en production, utilise uniquement les variables d'environnement Render
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
       validationSchema: envValidationSchema as unknown as Record<string, any>,
     }),
 
