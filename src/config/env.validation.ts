@@ -12,11 +12,8 @@ export const envValidationSchema = Joi.object({
   JWT_RESET_SECRET: Joi.string().required(),
   JWT_RESET_EXPIRATION: Joi.string().default('900'),
 
-  MAIL_HOST: Joi.string().required(),
-  MAIL_PORT: Joi.number().required(),
-  MAIL_SECURE: Joi.boolean().truthy('true').falsy('false').required(),
-  MAIL_USER: Joi.string().required(),
-  MAIL_PASSWORD: Joi.string().required(),
+  // MailService
+  MAIL_BREVO_API_KEY: Joi.string().required(),
   MAIL_FROM: Joi.string().email().required(),
 
   // FRONTEND_URL pour les liens dans les e-mails

@@ -4,33 +4,28 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  url      = "postgresql://root:root@localhost:5432/test_club"
 }
 
 model Player {
-  id         Int      @id @default(autoincrement())
-  firstName  String   @map("first_name")
-  lastName   String   @map("last_name")
-  teamId     Int      @map("team_id")
-  positionId Int      @map("position_id")
-  position   Position @relation(fields: [positionId], references: [id])
-  team       Team     @relation(fields: [teamId], references: [id])
-
-  // Picture player Cloudinary
-  imageUrl         String?  @map("image_url")
-  cloudinaryPublicId String? @map("cloudinary_public_id")
+  id                 Int      @id @default(autoincrement())
+  firstName          String   @map("first_name")
+  lastName           String   @map("last_name")
+  teamId             Int      @map("team_id")
+  positionId         Int      @map("position_id")
+  cloudinaryPublicId String?  @map("cloudinary_public_id")
+  imageUrl           String?  @map("image_url")
+  position           Position @relation(fields: [positionId], references: [id])
+  team               Team     @relation(fields: [teamId], references: [id])
 }
 
 model Team {
-  id      Int      @id @default(autoincrement())
-  name    String
-  country String?
-  player  Player[]
-
-  // Logo Cloudinary
-  logoUrl          String? @map("logo_url")
-  cloudinaryLogoId String? @map("cloudinary_logo_id")
+  id               Int      @id @default(autoincrement())
+  name             String
+  country          String?
+  cloudinaryLogoId String?  @map("cloudinary_logo_id")
+  logoUrl          String?  @map("logo_url")
+  player           Player[]
 }
 
 model Position {

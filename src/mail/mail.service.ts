@@ -4,50 +4,48 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import nodemailer, { Transporter } from 'nodemailer';
+import axios from 'axios';
 
 @Injectable()
 export class MailService {
   private readonly from: string;
   private readonly logger = new Logger(MailService.name);
-  private transporter: Transporter;
 
   constructor(private configService: ConfigService) {
-    const host = this.configService.get<string>('MAIL_HOST');
-    const port = Number(this.configService.get<string>('MAIL_PORT'));
-    const secure = this.configService.get<string>('MAIL_SECURE') === 'true';
-    const user = this.configService.get<string>('MAIL_USER');
-    const pass = this.configService.get<string>('MAIL_PASSWORD');
     const from = this.configService.get<string>('MAIL_FROM');
+    const apiKey = this.configService.get<string>('MAIL_BREVO_API_KEY');
 
-    if (!host || !port || !user || !pass || !from) {
-      throw new Error('SMTP configuration is missing in environment variables');
+    if (!from || !apiKey) {
+      throw new Error(
+        'Brevo API configuration is missing in environment variables',
+      );
     }
 
     this.from = from;
-
-    this.transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure,
-      auth: { user, pass },
-    });
-
-    this.logger.log(`SMTP initialized with host=${host} and user=${user}`);
+    this.logger.log(`MailService initialized with sender=${this.from}`);
   }
 
   async sendMail(to: string, subject: string, html: string) {
     try {
-      await this.transporter.sendMail({
-        from: `"Football Club" <${this.from}>`,
-        to,
-        subject,
-        html,
-      });
+      await axios.post(
+        'https://api.brevo.com/v3/smtp/email',
+        {
+          sender: { email: this.from },
+          to: [{ email: to }],
+          subject,
+          htmlContent: html,
+        },
+        {
+          headers: {
+            'api-key': this.configService.get<string>('BREVO_API_KEY'),
+            'Content-Type': 'application/json',
+          },
+        },
+      );
 
       this.logger.log(`Email sent to ${to} with subject "${subject}"`);
     } catch (error) {
-      this.logger.error('Error sending email', error);
+      this.logger.error('Error sending email via Brevo API', error);
       throw new InternalServerErrorException("Impossible d'envoyer l'email");
     }
   }
