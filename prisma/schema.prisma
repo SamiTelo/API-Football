@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://root:root@localhost:5432/test_club"
+  url      = env("DATABASE_URL")
 }
 
 model Player {
