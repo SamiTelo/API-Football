@@ -109,79 +109,16 @@ Positions
 
 
 ##  Variables d’environnement (.env)
+
+Copiez le fichier .env.example puis adaptez les valeurs selon votre environnement (local, test ou production) :
+
+```bash
+cp .env.example .env
 ```
-# =========================
-# Database
-# =========================
-DATABASE_URL=
+**NB :** 
+- Ne jamais commit le fichier .env dans le dépôt.
+- Seul .env.example doit être versionné.
 
-# =========================
-# JWT - ACCESS TOKEN
-# =========================
-JWT_SECRET=
-JWT_EXPIRATION=3600              # 1 heure (en secondes)
-
-# =========================
-# JWT - REFRESH TOKEN
-# =========================
-JWT_REFRESH_SECRET=
-JWT_REFRESH_EXPIRATION=86400     # 24h (en secondes)
-
-# =========================
-# JWT - RESET PASSWORD
-# =========================
-JWT_RESET_SECRET=
-JWT_RESET_EXPIRATION=900         # 15 minutes (en secondes)
-
-# =========================
-# JWT - EMAIL VERIFICATION
-# =========================
-JWT_VERIFY_SECRET=
-JWT_VERIFY_EXPIRATION=86400      # 24h (en secondes)
-
-# =========================
-# Email (Gmail SMTP)
-# =========================
-MAIL_FROM=
-GMAIL_USER=
-GMAIL_APP_PASSWORD=
-
-# ------------------------------
-# SUPERADMIN
-# ------------------------------
-SUPERADMIN_EMAIL=
-SUPERADMIN_PASSWORD=
-
-# =========================
-# Frontend
-# =========================
-FRONTEND_URL=
-
-# =========================
-# Sentry
-# =========================
-SENTRY_DSN=
-
-# =========================
-# Throttler
-# =========================
-THROTTLE_TTL=
-THROTTLE_LIMIT=
-
-# =========================
-# Application
-# =========================
-NODE_ENV=
-PORT=
-
-# =========================
-# CLOUDINARY
-# =========================
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
-
-```
 ## Démarrage
 ```bash
 git clone https://github.com/SamiTelo/API-Football
