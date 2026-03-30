@@ -148,14 +148,16 @@ export class AuthService {
       Number(this.configService.get('JWT_VERIFY_EXPIRATION')) || 86400,
     );
 
-    const verifyLink = `${this.getFrontendUrl()}/verify-email?token=${verifyToken}`;
+    const verifyLink = `${this.getFrontendUrl()}/auth/verify-email?token=${verifyToken}`;
 
     await this.mail.sendMail(
       user.email,
       'Confirmez votre email',
       `<p>Bonjour ${user.firstName},</p>
-       <p>Veuillez confirmer votre email :</p>
-       <a href="${verifyLink}">${verifyLink}</a>`,
+       <p>Veuillez confirmer votre email en cliquant sur le lien ci-dessous :</p>
+       <a href="${verifyLink}">${verifyLink}</a>
+       <p><span style="color: red; font-weight: bold;">Attention ! </span> Ce lien expirera dans 24 heures.</p>
+       <p>Si vous n’avez pas créé ce compte, ignorez ce mail.</p>`,
     );
 
     return {
