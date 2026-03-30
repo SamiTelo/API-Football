@@ -49,8 +49,29 @@ export class AuthController {
    * EMAIL VERIFICATION
    ------------------------------------------------ */
   @Post('verify-email')
-  async verifyEmail(@Body() dto: VerifyEmailDto) {
-    return this.authService.verifyEmail(dto.token);
+  async verifyEmail(
+    @Body() dto: VerifyEmailDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { access_token, refreshToken, user } =
+      await this.authService.verifyEmail(dto.token);
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 3600 * 1000,
+    });
+
+    return { user, access_token };
+  }
+
+  /* -----------------------------------------------
+   * RESEND VERIFICATION EMAIL
+   ------------------------------------------------ */
+  @Post('resend-verification')
+  async resendVerification(@Body('email') email: string) {
+    return this.authService.resendVerification(email);
   }
 
   /* -----------------------------------------------

@@ -45,6 +45,7 @@ model User {
   updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
   roleId          Int?
   isVerified      Boolean   @default(false)
+  lastVerificationSentAt DateTime? 
   twoFactorCode   String?
   twoFactorExpiry DateTime?
   role            Role?     @relation(fields: [roleId], references: [id])
