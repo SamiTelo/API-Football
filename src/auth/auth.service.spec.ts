@@ -45,7 +45,10 @@ const mailMock = {
   sendMail: jest.fn(),
 };
 
-const configMock: { get: jest.Mock<string | undefined, [string]> } = {
+const configMock: {
+  get: jest.Mock<string | undefined, [string]>;
+  getOrThrow: jest.Mock<string, [string]>;
+} = {
   get: jest.fn((key: string) => {
     const env: Record<string, string> = {
       JWT_SECRET: 'secret',
@@ -55,7 +58,20 @@ const configMock: { get: jest.Mock<string | undefined, [string]> } = {
       JWT_EXPIRATION: '3600',
       JWT_REFRESH_EXPIRATION: '86400',
       JWT_RESET_EXPIRATION: '900',
-      FRONTEND_URL: 'http://localhost:3000',
+      FRONTEND_URL: 'http://localhost:3004',
+    };
+    return env[key];
+  }),
+  getOrThrow: jest.fn((key: string) => {
+    const env: Record<string, string> = {
+      JWT_SECRET: 'secret',
+      JWT_REFRESH_SECRET: 'refresh',
+      JWT_RESET_SECRET: 'reset',
+      JWT_VERIFY_SECRET: 'verify',
+      JWT_EXPIRATION: '3600',
+      JWT_REFRESH_EXPIRATION: '86400',
+      JWT_RESET_EXPIRATION: '900',
+      FRONTEND_URL: 'http://localhost:3004',
     };
     return env[key];
   }),
@@ -294,9 +310,23 @@ describe('login ADMIN → 2FA required', () => {
 
 // Test VERIFY EMAIL
 describe('verifyEmail', () => {
-  it('doit activer le compte', async () => {
+  it('devrait activer le compte et retourner tokens', async () => {
     jwtMock.verify.mockReturnValue({ sub: 1 });
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: 1,
+      firstName: 'Test',
+      lastName: 'User',
+      email: 'test@mail.com',
+      role: { name: 'USER' },
+    });
     prismaMock.user.update.mockResolvedValue({});
+
+    jest
+      .spyOn(service as any, 'generateAccessToken')
+      .mockResolvedValue('access-token');
+    jest
+      .spyOn(service as any, 'generateRefreshToken')
+      .mockResolvedValue('refresh-token');
 
     const result = await service.verifyEmail('token');
 
@@ -304,8 +334,55 @@ describe('verifyEmail', () => {
       where: { id: 1 },
       data: { isVerified: true },
     });
+    expect(result.access_token).toBe('access-token');
+    expect(result.refreshToken).toBe('refresh-token');
+    expect(result.user.email).toBe('test@mail.com');
+  });
+});
 
-    expect(result.message).toContain('Email vérifié');
+// Test RESEND VERIFICATION
+describe('resendVerification', () => {
+  it('doit renvoyer un nouveau lien si conditions ok', async () => {
+    const now = new Date();
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: 1,
+      firstName: 'Test',
+      email: 'test@mail.com',
+      isVerified: false,
+      role: { name: 'USER' },
+      lastVerificationSentAt: new Date(now.getTime() - 11 * 60 * 1000), // plus de 10 min
+    });
+    prismaMock.user.update.mockResolvedValue({});
+
+    jest
+      .spyOn(service as any, 'generateToken')
+      .mockResolvedValue('new-verify-token');
+    jest
+      .spyOn(service as any, 'getFrontendUrl')
+      .mockReturnValue('http://localhost:3004');
+
+    const result = await service.resendVerification('test@mail.com');
+
+    expect(mailMock.sendMail).toHaveBeenCalledWith(
+      'test@mail.com',
+      'Confirmez votre email',
+      expect.stringContaining('new-verify-token'),
+    );
+    expect(prismaMock.user.update).toHaveBeenCalled();
+    expect(result.message).toContain('Un nouveau lien');
+  });
+
+  it('doit bloquer si délai < 10 min', async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: 1,
+      firstName: 'Test',
+      email: 'test@mail.com',
+      isVerified: false,
+      role: { name: 'USER' },
+      lastVerificationSentAt: new Date(),
+    });
+
+    await expect(service.resendVerification('test@mail.com')).rejects.toThrow();
   });
 });
 

@@ -120,9 +120,7 @@ describe('AuthController (e2e)', () => {
         'Compte créé. Vérifiez votre email pour l’activer.',
       );
 
-      //---------------------------------------------
-      //  SIMULER VERIFICATION EMAIL
-      //---------------------------------------------
+      // Simule la vérification de l'email en mettant à jour directement l'utilisateur dans la DB
       await prisma.user.update({
         where: { email },
         data: { isVerified: true },

@@ -235,16 +235,105 @@ export class AuthService {
    * VERIFY EMAIL
    ------------------------------------------------ */
   async verifyEmail(token: string) {
+    // Vérifie et décode le token
     const payload = this.jwt.verify<{ sub: number }>(token, {
-      secret: this.configService.get('JWT_VERIFY_SECRET'),
+      secret: this.configService.getOrThrow<string>('JWT_VERIFY_SECRET'),
     });
 
-    await this.prisma.user.update({
+    // Récupère l'utilisateur
+    const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
+      include: { role: true }, // inclure le rôle pour vérifier role.name
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur introuvable');
+    }
+
+    // Vérifie si c'est un utilisateur classique
+    if (user.role?.name !== 'USER') {
+      throw new UnauthorizedException(
+        'Cette opération est réservée aux utilisateurs classiques',
+      );
+    }
+
+    // Marque l'utilisateur comme vérifié
+    await this.prisma.user.update({
+      where: { id: user.id },
       data: { isVerified: true },
     });
 
-    return { message: 'Email vérifié avec succès' };
+    // Génère les tokens en utilisant la fonction utilitaire existante
+    const access_token = await this.generateAccessToken(user);
+    const refreshToken = await this.generateRefreshToken(user);
+
+    // Retourne uniquement les infos nécessaires + tokens
+    return {
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+      },
+      access_token,
+      refreshToken,
+    };
+  }
+
+  /* ---------------------------------------------------------------------
+  /* RESEND VERIFICATION EMAIL (avec contrôle de délai entre renvois)
+   ---------------------------------------------------------------- */
+  async resendVerification(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: { role: true },
+    });
+
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+    if (user.isVerified)
+      throw new BadRequestException('Le compte est déjà vérifié');
+    if (user.role?.name !== 'USER')
+      throw new BadRequestException(
+        'Cette opération est réservée aux utilisateurs classiques',
+      );
+
+    // Vérifier délai entre renvois (10 min)
+    const now = new Date();
+    if (user.lastVerificationSentAt) {
+      const diff =
+        (now.getTime() - user.lastVerificationSentAt.getTime()) / 1000;
+      if (diff < 10 * 60) {
+        throw new BadRequestException(
+          `Vous devez attendre ${Math.ceil((10 * 60 - diff) / 60)} minutes avant de renvoyer un nouveau lien`,
+        );
+      }
+    }
+
+    // Générer nouveau token et lien
+    const verifyToken = await this.generateToken(
+      { sub: user.id },
+      'JWT_VERIFY_SECRET',
+      Number(this.configService.get('JWT_VERIFY_EXPIRATION')) || 86400,
+    );
+    const verifyLink = `${this.getFrontendUrl()}/auth/verify-email?token=${verifyToken}`;
+
+    // Envoyer le mail
+    await this.mail.sendMail(
+      user.email,
+      'Confirmez votre email',
+      `<p>Bonjour ${user.firstName},</p>
+     <p>Veuillez confirmer votre email en cliquant sur le lien ci-dessous :</p>
+     <a href="${verifyLink}">${verifyLink}</a>
+     <p>Ce lien expirera dans 24 heures.</p>`,
+    );
+
+    // Mettre à jour lastVerificationSentAt
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastVerificationSentAt: now },
+    });
+
+    return { message: 'Un nouveau lien de vérification vous a été envoyé.' };
   }
 
   /* -----------------------------------------------
