@@ -58,9 +58,10 @@ export class AuthController {
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true, // obligatoire pour HTTPS
+      sameSite: 'none', // cross-domain
       maxAge: 24 * 3600 * 1000,
+      path: '/',
     });
 
     return { user, access_token };
@@ -113,9 +114,10 @@ export class AuthController {
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true, // OBLIGATOIRE en prod HTTPS
+      sameSite: 'none', // cross-domain obligatoire
       maxAge: 24 * 3600 * 1000,
+      path: '/',
     });
 
     return { user, access_token };
@@ -160,9 +162,10 @@ export class AuthController {
 
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true, // OBLIGATOIRE en prod HTTPS
+      sameSite: 'none', // cross-domain obligatoire
       maxAge: 24 * 3600 * 1000,
+      path: '/',
     });
 
     return { access_token };
@@ -175,8 +178,9 @@ export class AuthController {
   logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true,
+      sameSite: 'none',
+      path: '/',
     });
 
     return { message: 'Déconnexion réussie' };
