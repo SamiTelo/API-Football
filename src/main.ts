@@ -5,6 +5,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { SentryInterceptor } from './sentry/sentry.interceptor';
 import * as dotenv from 'dotenv';
+import { ExpressAdapter } from '@nestjs/platform-express';
+import express, { Express } from 'express';
 
 // Charge l'environnement correspondant
 const env = process.env.NODE_ENV || 'development';
@@ -18,8 +20,11 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   // Création de l'application NestJS
-  const app = await NestFactory.create(AppModule);
+  const server: Express = express();
+  const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
 
+  // Trust proxy pour cookies sécurisés en prod
+  server.set('trust proxy', 1);
   app.setGlobalPrefix('api');
 
   // Interceptor global Sentry
