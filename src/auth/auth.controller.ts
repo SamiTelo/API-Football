@@ -115,7 +115,7 @@ export class AuthController {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: true, // OBLIGATOIRE en prod HTTPS
-      sameSite: 'none', // cross-domain obligatoire
+      sameSite: 'lax',
       maxAge: 24 * 3600 * 1000,
       path: '/',
     });
@@ -163,7 +163,7 @@ export class AuthController {
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
       secure: true, // OBLIGATOIRE en prod HTTPS
-      sameSite: 'none', // cross-domain obligatoire
+      sameSite: 'lax',
       maxAge: 24 * 3600 * 1000,
       path: '/',
     });
@@ -179,7 +179,7 @@ export class AuthController {
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: true,
-      sameSite: 'none',
+      sameSite: 'lax',
       path: '/',
     });
 

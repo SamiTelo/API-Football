@@ -36,7 +36,7 @@ async function bootstrap() {
   // CORS (frontend)
   app.enableCors({
     origin: [
-      'https://football-club-d6fa.onrender.com', // frontend déployé render
+      'https://dashboard-football-club.vercel.app', // frontend déployé vercel
     ],
     credentials: true,
   });
