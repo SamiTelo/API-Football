@@ -21,7 +21,6 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { Roles } from './decorators/roles.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
-import { Verify2FaDto } from './dto/verify-2fa.dto';
 
 interface AuthenticatedRequest extends Request {
   user: JwtPayload;
@@ -93,9 +92,8 @@ export class AuthController {
   }
 
   /* -----------------------------------------------
-   * LOGIN (blocked if email not verified)
-   ------------------------------------------------ */
-
+ * LOGIN (blocked if email not verified)
+ ------------------------------------------------ */
   @Post('login')
   // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
   @Throttle({ limit: 5, ttl: 60 }) // limite de tentatives pour éviter bruteforce
@@ -107,8 +105,21 @@ export class AuthController {
 
     // Si 2FA requis
     if ('twoFactorRequired' in result) {
-      // retourne { twoFactorRequired: true, userId } pour le front
-      return result;
+      // 🔹 Vérifier que userId existe avant de créer le cookie
+      if (result.userId == null) {
+        throw new Error("Impossible de récupérer l'ID utilisateur pour 2FA");
+      }
+
+      // Stocker temporairement l'userId dans un cookie HttpOnly pour 10 min
+      res.cookie('pending2FAUser', result.userId.toString(), {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        maxAge: 10 * 60 * 1000, // 10 minutes
+        path: '/auth/verify-2fa', // cookie uniquement pour la page 2FA
+      });
+
+      return { twoFactorRequired: true };
     }
 
     // Login normal : set cookies + retour user + access_token
@@ -116,7 +127,7 @@ export class AuthController {
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: true, // obligatoire HTTPS en prod
+      secure: true,
       sameSite: 'lax',
       maxAge: 24 * 3600 * 1000, // 24h
       path: '/',
@@ -126,17 +137,37 @@ export class AuthController {
   }
 
   /* -----------------------------------------------
-   * VERIFY 2FA
-   ------------------------------------------------ */
+ * VERIFY 2FA
+ ------------------------------------------------ */
   @Post('verify-2fa')
   async verify2fa(
-    @Body() dto: Verify2FaDto,
+    @Body() dto: { code: string },
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { access_token, refreshToken, user } =
-      await this.authService.verify2fa(dto.userId, dto.code);
+    // Lire l'userId depuis le cookie HttpOnly
+    const pendingUserIdStr = req.cookies['pending2FAUser'] as
+      | string
+      | undefined;
 
-    // Set cookie après validation OTP
+    if (!pendingUserIdStr) {
+      throw new UnauthorizedException('Session 2FA expirée');
+    }
+
+    // Convertir en number de manière sécurisée
+    const pendingUserId = Number(pendingUserIdStr);
+    if (Number.isNaN(pendingUserId)) {
+      throw new UnauthorizedException('Session 2FA invalide');
+    }
+
+    // Vérifier le code 2FA via le service
+    const { access_token, refreshToken, user } =
+      await this.authService.verify2fa(pendingUserId, dto.code);
+
+    // Supprimer le cookie temporaire
+    res.clearCookie('pending2FAUser', { path: '/auth/verify-2fa' });
+
+    // Set cookie refreshToken après validation OTP
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: true,
@@ -145,7 +176,7 @@ export class AuthController {
       path: '/',
     });
 
-    // Important : créer un cookie pour 2FA validée
+    // Créer cookie pour 2FA validée
     res.cookie('twoFAValidated', 'true', {
       httpOnly: true,
       secure: true,
