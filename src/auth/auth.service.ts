@@ -347,8 +347,10 @@ export class AuthService {
     if (user.twoFactorExpiry < new Date())
       throw new UnauthorizedException('Code expiré');
 
-    const valid = await bcrypt.compare(code, user.twoFactorCode);
-    if (!valid) throw new UnauthorizedException('Code invalide');
+    // Si le code 2FA est stocké en clair (current code)
+    if (user.twoFactorCode !== code) {
+      throw new UnauthorizedException('Code invalide');
+    }
 
     // Reset code OTP
     await this.prisma.user.update({
@@ -359,7 +361,6 @@ export class AuthService {
       },
     });
 
-    // Retour complet pour le front
     return {
       access_token: await this.generateAccessToken(user),
       refreshToken: await this.generateRefreshToken(user),
