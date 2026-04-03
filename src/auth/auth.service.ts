@@ -171,7 +171,7 @@ export class AuthService {
   async login(dto: LoginUserDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
-      include: { role: true }, // inclure le rôle
+      include: { role: true },
     });
 
     if (!user || !user.isVerified) {
@@ -179,31 +179,41 @@ export class AuthService {
     }
 
     const valid = await bcrypt.compare(dto.password, user.password);
-    if (!valid) throw new UnauthorizedException('Identifiants invalides');
+    if (!valid) {
+      throw new UnauthorizedException('Identifiants invalides');
+    }
 
     const access_token = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user);
 
+    // Stocker refresh token hashé
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { refreshToken: await bcrypt.hash(refreshToken, 10) },
+      data: { refreshToken: hashedRefreshToken },
     });
 
-    //  Vérifier si 2FA est requis pour le rôle
+    // ================================
+    //  2FA pour ADMIN / SUPERADMIN
+    // ================================
     if (user.role?.name === 'ADMIN' || user.role?.name === 'SUPERADMIN') {
-      // Générer code 2FA temporaire (6 chiffres)
       const twoFactorCode = Math.floor(
         100000 + Math.random() * 900000,
       ).toString();
-      const twoFactorExpiry = new Date(Date.now() + 5 * 60 * 1000); // expire dans 5 min
 
-      // Sauvegarder le code et l'expiration en base
+      const hashedTwoFactorCode = await bcrypt.hash(twoFactorCode, 10);
+
+      const twoFactorExpiry = new Date(Date.now() + 5 * 60 * 1000);
+
       await this.prisma.user.update({
         where: { id: user.id },
-        data: { twoFactorCode, twoFactorExpiry },
+        data: {
+          twoFactorCode: hashedTwoFactorCode, // hashé
+          twoFactorExpiry,
+        },
       });
 
-      // Envoyer le code par email
       await this.mail.sendMail(
         user.email,
         'Votre code 2FA',
@@ -212,13 +222,15 @@ export class AuthService {
        <p>Il expire dans 5 minutes.</p>`,
       );
 
-      // Retourner seulement le flag 2FA requis, pas encore les tokens finaux
       return {
         twoFactorRequired: true,
-        userId: user.id, // pour identifier l'utilisateur côté frontend
+        userId: user.id,
       };
     }
 
+    // ================================
+    //  USER normal
+    // ================================
     return {
       user: {
         id: user.id,
@@ -337,18 +349,28 @@ export class AuthService {
   }
 
   /* -----------------------------------------------
-   * VERIFY 2FA
-   ------------------------------------------------ */
+ * VERIFY 2FA
+ ------------------------------------------------ */
   async verify2fa(userId: number, code: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user || !user.twoFactorCode || !user.twoFactorExpiry)
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.twoFactorCode || !user.twoFactorExpiry) {
       throw new UnauthorizedException();
+    }
 
-    if (user.twoFactorExpiry < new Date())
+    // Vérifier expiration
+    if (user.twoFactorExpiry < new Date()) {
       throw new UnauthorizedException('Code expiré');
+    }
 
+    // Comparaison sécurisée avec bcrypt
     const valid = await bcrypt.compare(code, user.twoFactorCode);
-    if (!valid) throw new UnauthorizedException('Code invalide');
+
+    if (!valid) {
+      throw new UnauthorizedException('Code invalide');
+    }
 
     // Reset code OTP
     await this.prisma.user.update({
@@ -359,7 +381,6 @@ export class AuthService {
       },
     });
 
-    // Retour complet pour le front
     return {
       access_token: await this.generateAccessToken(user),
       refreshToken: await this.generateRefreshToken(user),
