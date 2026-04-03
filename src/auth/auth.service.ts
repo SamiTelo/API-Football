@@ -350,6 +350,7 @@ export class AuthService {
     const valid = await bcrypt.compare(code, user.twoFactorCode);
     if (!valid) throw new UnauthorizedException('Code invalide');
 
+    // Reset code OTP
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
@@ -358,12 +359,13 @@ export class AuthService {
       },
     });
 
+    // Retour complet pour le front
     return {
       access_token: await this.generateAccessToken(user),
       refreshToken: await this.generateRefreshToken(user),
+      user,
     };
   }
-
   // -----------------------------------------------
   // CREATE ADMIN (avec audit IP et utilisateur créateur)
   // -----------------------------------------------
