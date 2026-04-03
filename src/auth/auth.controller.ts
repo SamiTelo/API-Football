@@ -95,28 +95,30 @@ export class AuthController {
   /* -----------------------------------------------
    * LOGIN (blocked if email not verified)
    ------------------------------------------------ */
-  // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
-  @Throttle({ limit: 5, ttl: 60 })
+
   @Post('login')
+  // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
+  @Throttle({ limit: 5, ttl: 60 }) // limite de tentatives pour éviter bruteforce
   async login(
     @Body() dto: LoginUserDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.login(dto);
 
-    // If 2FA is required
+    // Si 2FA requis
     if ('twoFactorRequired' in result) {
-      return result; //returns { twoFactorRequired, userId }
+      // retourne { twoFactorRequired: true, userId } pour le front
+      return result;
     }
 
-    // Otherwise, it's a normal login
+    // Login normal : set cookies + retour user + access_token
     const { access_token, refreshToken, user } = result;
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: true, // OBLIGATOIRE en prod HTTPS
+      secure: true, // obligatoire HTTPS en prod
       sameSite: 'lax',
-      maxAge: 24 * 3600 * 1000,
+      maxAge: 24 * 3600 * 1000, // 24h
       path: '/',
     });
 
@@ -127,8 +129,32 @@ export class AuthController {
    * VERIFY 2FA
    ------------------------------------------------ */
   @Post('verify-2fa')
-  async verify2fa(@Body() dto: Verify2FaDto) {
-    return this.authService.verify2fa(dto.userId, dto.code);
+  async verify2fa(
+    @Body() dto: Verify2FaDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { access_token, refreshToken, user } =
+      await this.authService.verify2fa(dto.userId, dto.code);
+
+    // Set cookie après validation OTP
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 24 * 3600 * 1000,
+      path: '/',
+    });
+
+    // Important : créer un cookie pour 2FA validée
+    res.cookie('twoFAValidated', 'true', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 24 * 3600 * 1000,
+      path: '/',
+    });
+
+    return { user, access_token };
   }
 
   /* -----------------------------------------------
