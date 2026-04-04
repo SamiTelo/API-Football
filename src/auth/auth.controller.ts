@@ -103,36 +103,41 @@ export class AuthController {
   ) {
     const result = await this.authService.login(dto);
 
-    // 2FA requis pour admin
+    // -------------------------
+    // Si 2FA requis
+    // -------------------------
     if ('twoFactorRequired' in result) {
-      if (!result.userId)
-        throw new Error('Impossible de récupérer l’ID utilisateur pour 2FA');
+      if (result.userId == null) {
+        throw new Error("Impossible de récupérer l'ID utilisateur pour 2FA");
+      }
 
+      // Cookie temporaire userId
       res.cookie('pending2FAUser', result.userId.toString(), {
         httpOnly: true,
         secure: true,
         sameSite: 'lax',
-        maxAge: 10 * 60 * 1000, // 10 min
-        path: '/auth/verify-2fa',
+        maxAge: 10 * 60 * 1000,
+        path: '/',
       });
 
-      // Pas encore de refreshToken pour 2FA : cookie temporaire suffisant
-      return { twoFactorRequired: true };
+      // Indicateur 2FA requis
+      res.cookie('twoFARequired', 'true', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        maxAge: 10 * 60 * 1000,
+        path: '/',
+      });
+
+      return { requires2FA: true };
     }
 
-    // Login normal : créer cookies pour middleware
+    // -------------------------
+    // Login normal
+    // -------------------------
     const { access_token, refreshToken, user } = result;
 
     res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 24 * 3600 * 1000, // 24h
-      path: '/',
-    });
-
-    // Pour les utilisateurs sans 2FA, on définit direct twoFAValidated = true
-    res.cookie('twoFAValidated', 'true', {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
@@ -144,7 +149,7 @@ export class AuthController {
   }
 
   /* -----------------------------------------------
- * VERIFY 2FA (admin)
+ * VERIFY 2FA (admin/SuperDamin)
  ------------------------------------------------ */
   @Post('verify-2fa')
   async verify2fa(
@@ -166,7 +171,8 @@ export class AuthController {
       await this.authService.verify2fa(pendingUserId, dto.code);
 
     // Supprimer le cookie temporaire
-    res.clearCookie('pending2FAUser', { path: '/auth/verify-2fa' });
+    res.clearCookie('pending2FAUser', { path: '/' });
+    res.clearCookie('twoFARequired', { path: '/' });
 
     // Set cookies finaux après validation 2FA
     res.cookie('refreshToken', refreshToken, {
