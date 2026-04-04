@@ -181,24 +181,33 @@ describe('AuthController (e2e)', () => {
   });
 
   /* ---------------------------
-   * LOGIN ADMIN (2FA)
-   --------------------------- */
+ * LOGIN ADMIN (2FA)
+ --------------------------- */
   describe('POST /auth/login (ADMIN)', () => {
-    it('devrait renvoyer twoFactorRequired pour ADMIN', async () => {
+    it('devrait renvoyer requires2FA pour ADMIN', async () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const loginRes = await request(app.getHttpServer())
         .post('/auth/login')
         .send({ email: adminEmail, password: adminPassword })
         .expect(201);
 
-      // Déclare le type correctement pour inclure userId optionnel
       const loginBody = loginRes.body as {
-        twoFactorRequired?: boolean;
-        userId?: number;
+        requires2FA?: boolean;
       };
 
       // Vérifie que le backend demande la 2FA
-      expect(loginBody.twoFactorRequired).toBe(true);
+      expect(loginBody.requires2FA).toBe(true);
+
+      // Récupère les cookies de manière sûre
+      const cookiesRaw = loginRes.headers['set-cookie'];
+      const cookies: string[] = Array.isArray(cookiesRaw)
+        ? cookiesRaw
+        : cookiesRaw
+          ? [cookiesRaw]
+          : [];
+
+      // Vérifie que le cookie twoFARequired est bien présent
+      expect(cookies.some((c) => c.includes('twoFARequired'))).toBe(true);
     });
 
     /* ---------------------------

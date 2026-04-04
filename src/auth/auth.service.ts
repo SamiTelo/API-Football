@@ -336,7 +336,8 @@ export class AuthService {
       `<p>Bonjour ${user.firstName},</p>
      <p>Veuillez confirmer votre email en cliquant sur le lien ci-dessous :</p>
      <a href="${verifyLink}">${verifyLink}</a>
-     <p>Ce lien expirera dans 24 heures.</p>`,
+     <p><span style="color: red; font-weight: bold;">Attention ! </span> Ce lien expirera dans 24 heures.</p>
+     <p>Si vous n’avez pas créé ce compte, ignorez ce mail.</p>`,
     );
 
     // Mettre à jour lastVerificationSentAt
