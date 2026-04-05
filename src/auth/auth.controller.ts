@@ -93,7 +93,7 @@ export class AuthController {
 
   /* -----------------------------------------------
  * LOGIN (blocked if email not verified)
- ------------------------------------------------ */
+------------------------------------------------ */
   @Post('login')
   // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
   @Throttle({ limit: 5, ttl: 60 })
@@ -103,15 +103,14 @@ export class AuthController {
   ) {
     const result = await this.authService.login(dto);
 
-    // -------------------------
+    // ================================
     // Si 2FA requis
-    // -------------------------
-    if ('twoFactorRequired' in result) {
+    // ================================
+    if ('requires2FA' in result) {
       if (result.userId == null) {
         throw new Error("Impossible de récupérer l'ID utilisateur pour 2FA");
       }
 
-      // Cookie temporaire userId
       res.cookie('pending2FAUser', result.userId.toString(), {
         httpOnly: true,
         secure: true,
@@ -120,7 +119,6 @@ export class AuthController {
         path: '/',
       });
 
-      // Indicateur 2FA requis
       res.cookie('twoFARequired', 'true', {
         httpOnly: true,
         secure: true,
@@ -132,9 +130,9 @@ export class AuthController {
       return { requires2FA: true };
     }
 
-    // -------------------------
+    // ================================
     // Login normal
-    // -------------------------
+    // ================================
     const { access_token, refreshToken, user } = result;
 
     res.cookie('refreshToken', refreshToken, {

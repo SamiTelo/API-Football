@@ -40,14 +40,14 @@ export class AuthService {
   private async generateToken(
     payload: object,
     secretEnv: string,
-    expiresInSeconds: number, // <- uniquement number
+    expiresInSeconds: number,
   ): Promise<string> {
     const secret = this.configService.get<string>(secretEnv);
     if (!secret) throw new Error(`Missing JWT secret for ${secretEnv}`);
 
     return this.jwt.signAsync(payload, {
       secret,
-      expiresIn: expiresInSeconds, // number accepter directement par Ts
+      expiresIn: expiresInSeconds,
     });
   }
 
@@ -66,7 +66,7 @@ export class AuthService {
       {
         sub: user.id,
         email: user.email,
-        role: roleName, // ici c'est un string ou undefined
+        role: roleName,
       },
       'JWT_SECRET',
       expiresIn,
@@ -162,84 +162,6 @@ export class AuthService {
 
     return {
       message: 'Compte créé. Vérifiez votre email pour l’activer.',
-    };
-  }
-
-  /* -----------------------------------------------
-   * LOGIN
-   ------------------------------------------------ */
-  async login(dto: LoginUserDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-      include: { role: true },
-    });
-
-    if (!user || !user.isVerified) {
-      throw new UnauthorizedException('Identifiants invalides');
-    }
-
-    const valid = await bcrypt.compare(dto.password, user.password);
-    if (!valid) {
-      throw new UnauthorizedException('Identifiants invalides');
-    }
-
-    const access_token = await this.generateAccessToken(user);
-    const refreshToken = await this.generateRefreshToken(user);
-
-    // Stocker refresh token hashé
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { refreshToken: hashedRefreshToken },
-    });
-
-    // ================================
-    //  2FA pour ADMIN / SUPERADMIN
-    // ================================
-    if (user.role?.name === 'ADMIN' || user.role?.name === 'SUPERADMIN') {
-      const twoFactorCode = Math.floor(
-        100000 + Math.random() * 900000,
-      ).toString();
-
-      const hashedTwoFactorCode = await bcrypt.hash(twoFactorCode, 10);
-
-      const twoFactorExpiry = new Date(Date.now() + 5 * 60 * 1000);
-
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: {
-          twoFactorCode: hashedTwoFactorCode, // hashé
-          twoFactorExpiry,
-        },
-      });
-
-      await this.mail.sendMail(
-        user.email,
-        'Votre code 2FA',
-        `<p>Bonjour ${user.firstName},</p>
-       <p>Voici votre code 2FA : <strong>${twoFactorCode}</strong></p>
-       <p>Il expire dans 5 minutes.</p>`,
-      );
-
-      return {
-        twoFactorRequired: true,
-        userId: user.id,
-      };
-    }
-
-    // ================================
-    //  USER normal
-    // ================================
-    return {
-      user: {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-      },
-      access_token,
-      refreshToken,
     };
   }
 
@@ -350,6 +272,83 @@ export class AuthService {
   }
 
   /* -----------------------------------------------
+  *   LOGIN
+  ------------------------------------------------ */
+  async login(dto: LoginUserDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+      include: { role: true },
+    });
+
+    if (!user || !user.isVerified) {
+      throw new UnauthorizedException(
+        'Impossible de se connecter. Veuillez verifier votre email pour activer votre compte',
+      );
+    }
+
+    const valid = await bcrypt.compare(dto.password, user.password);
+    if (!valid) {
+      throw new UnauthorizedException(
+        "Identifiants invalides. Veuillez reinitialiser votre mot de passe si vous l'avez oublié",
+      );
+    }
+
+    // 2FA pour ADMIN / SUPERADMIN
+    if (user.role?.name === 'ADMIN' || user.role?.name === 'SUPERADMIN') {
+      const twoFactorCode = Math.floor(
+        100000 + Math.random() * 900000,
+      ).toString();
+
+      const hashedTwoFactorCode = await bcrypt.hash(twoFactorCode, 10);
+      const twoFactorExpiry = new Date(Date.now() + 5 * 60 * 1000);
+
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          twoFactorCode: hashedTwoFactorCode,
+          twoFactorExpiry,
+        },
+      });
+
+      await this.mail.sendMail(
+        user.email,
+        'Votre code 2FA',
+        `<p>Bonjour ${user.firstName},</p>
+       <p>Voici votre code <strong>${twoFactorCode}</strong>, Veuillez saisir et valider ce code pour vous connecter</p>
+       <p><span style="color: red; font-weight: bold;">Attention ! </span> Il expire dans 5 minutes.</p>
+       <p>Si vous n'avez pas tenter de vous connecter, ignorez ce mail.</p>`,
+      );
+
+      return {
+        requires2FA: true,
+        userId: user.id,
+      };
+    }
+
+    // USER normal
+    const access_token = await this.generateAccessToken(user);
+    const refreshToken = await this.generateRefreshToken(user);
+
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken: hashedRefreshToken },
+    });
+
+    return {
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+      },
+      access_token,
+      refreshToken,
+    };
+  }
+
+  /* -----------------------------------------------
  * VERIFY 2FA
  ------------------------------------------------ */
   async verify2fa(userId: number, code: string) {
@@ -361,33 +360,44 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    // Vérifier expiration
     if (user.twoFactorExpiry < new Date()) {
       throw new UnauthorizedException('Code expiré');
     }
 
-    // Comparaison sécurisée avec bcrypt
     const valid = await bcrypt.compare(code, user.twoFactorCode);
 
     if (!valid) {
       throw new UnauthorizedException('Code invalide');
     }
 
-    // Reset code OTP
+    // Générer nouveaux tokens
+    const access_token = await this.generateAccessToken(user);
+    const refreshToken = await this.generateRefreshToken(user);
+
+    // Hasher le refresh token
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
         twoFactorCode: null,
         twoFactorExpiry: null,
+        refreshToken: hashedRefreshToken,
       },
     });
 
     return {
-      access_token: await this.generateAccessToken(user),
-      refreshToken: await this.generateRefreshToken(user),
-      user,
+      access_token,
+      refreshToken,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+      },
     };
   }
+
   // -----------------------------------------------
   // CREATE ADMIN (avec audit IP et utilisateur créateur)
   // -----------------------------------------------
@@ -452,24 +462,6 @@ export class AuthService {
   }
 
   /* -----------------------------------------------
-   * PROFILE / VALIDATION
-   ------------------------------------------------ */
-  async validateUser(userId: number) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        createdAt: true,
-      },
-    });
-    if (!user) throw new UnauthorizedException('Utilisateur invalide');
-    return user;
-  }
-
-  /* -----------------------------------------------
    * REFRESH TOKEN
    ------------------------------------------------ */
   async refreshAccessToken(refreshToken: string) {
@@ -531,6 +523,24 @@ export class AuthService {
   }
 
   /* -----------------------------------------------
+   * PROFILE / VALIDATION
+   ------------------------------------------------ */
+  async validateUser(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        createdAt: true,
+      },
+    });
+    if (!user) throw new UnauthorizedException('Utilisateur invalide');
+    return user;
+  }
+
+  /* -----------------------------------------------
    * LOGOUT
    ------------------------------------------------ */
   async logout(userId: number) {
@@ -555,7 +565,7 @@ export class AuthService {
       Number(this.configService.get('JWT_RESET_EXPIRATION')) || 900,
     );
 
-    const resetLink = `${this.getFrontendUrl()}/reset-password?token=${resetToken}`;
+    const resetLink = `${this.getFrontendUrl()}/auth/reset-password?token=${resetToken}`;
 
     await this.mail.sendMail(
       user.email,
@@ -563,7 +573,8 @@ export class AuthService {
       `<p>Bonjour ${user.firstName} ${user.lastName}</p>
        <p>Voici votre lien de réinitialisation :</p>
        <a href="${resetLink}">${resetLink}</a>
-       <p>Le lien expire dans 15 minutes.</p>`,
+       <p><span style="color: red; font-weight: bold;">Attention ! </span> Ce lien expirera dans 15 minutes.</p>
+       <p>Si vous n’avez pas créé ce compte, ignorez ce mail.</p>`,
     );
 
     return { message: 'Un lien de réinitialisation vous a été envoyé.' };
