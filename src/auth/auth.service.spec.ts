@@ -205,7 +205,11 @@ describe('Nonexistent User', () => {
 
     await expect(
       service.login({ email: 'test@mail.com', password: 'pass123' }),
-    ).rejects.toThrow(new UnauthorizedException('Identifiants invalides'));
+    ).rejects.toThrow(
+      new UnauthorizedException(
+        'Impossible de se connecter. Veuillez verifier votre email pour activer votre compte',
+      ),
+    );
   });
 });
 
@@ -222,7 +226,11 @@ describe('unverified email', () => {
 
     await expect(
       service.login({ email: 'test@mail.com', password: 'pass123' }),
-    ).rejects.toThrow(new UnauthorizedException('Identifiants invalides'));
+    ).rejects.toThrow(
+      new UnauthorizedException(
+        'Impossible de se connecter. Veuillez verifier votre email pour activer votre compte',
+      ),
+    );
   });
 });
 
@@ -241,7 +249,11 @@ describe('Invalid password', () => {
 
     await expect(
       service.login({ email: 'test@mail.com', password: 'wrongpass' }),
-    ).rejects.toThrow(new UnauthorizedException('Identifiants invalides'));
+    ).rejects.toThrow(
+      new UnauthorizedException(
+        "Identifiants invalides. Veuillez reinitialiser votre mot de passe si vous l'avez oublié",
+      ),
+    );
   });
 });
 
@@ -302,7 +314,7 @@ describe('login ADMIN → 2FA required', () => {
       password: 'pass123',
     });
 
-    expect(result.twoFactorRequired).toBe(true);
+    expect(result.requires2FA).toBe(true);
     expect(result.userId).toBe(2);
     expect(mailMock.sendMail).toHaveBeenCalled();
   });
@@ -340,7 +352,9 @@ describe('verifyEmail', () => {
   });
 });
 
-// Test RESEND VERIFICATION
+//==================================================
+// RESEND VERIFICATION EMAIL
+//==================================================
 describe('resendVerification', () => {
   it('doit renvoyer un nouveau lien si conditions ok', async () => {
     const now = new Date();
@@ -389,31 +403,50 @@ describe('resendVerification', () => {
 //==================================================
 // VERIFY 2FA
 //==================================================
-// Invalid code
 describe('2FA invalide', () => {
-  it('doit échouer si code 2FA invalide', async () => {
+  it('doit échouer si mauvais code', async () => {
     prismaMock.user.findUnique.mockResolvedValue({
       id: 1,
-      twoFactorCode: 'hashed-code',
+      twoFactorCode: 'hashed',
       twoFactorExpiry: new Date(Date.now() + 10000),
     });
 
-    (jest.spyOn(bcrypt, 'compare') as jest.Mock).mockResolvedValue(false);
+    (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+    await expect(service.verify2fa(1, '000000')).rejects.toThrow(
+      UnauthorizedException,
+    );
+  });
+});
+
+describe('2FA expiré', () => {
+  it('doit échouer si code expiré', async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: 1,
+      twoFactorCode: 'hashed',
+      twoFactorExpiry: new Date(Date.now() - 10000),
+    });
+
     await expect(service.verify2fa(1, '123456')).rejects.toThrow(
       UnauthorizedException,
     );
   });
 });
-// Valid code
+
 describe('2FA valide', () => {
-  it('doit valider le 2FA et retourner les tokens', async () => {
+  it('doit retourner tokens et user', async () => {
     prismaMock.user.findUnique.mockResolvedValue({
       id: 1,
-      twoFactorCode: 'hashed-code',
+      firstName: 'Admin',
+      lastName: 'User',
+      email: 'admin@mail.com',
+      role: { name: 'ADMIN' },
+      twoFactorCode: 'hashed',
       twoFactorExpiry: new Date(Date.now() + 10000),
     });
 
-    (jest.spyOn(bcrypt, 'compare') as jest.Mock).mockResolvedValue(true);
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+    (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-refresh');
 
     jest
       .spyOn(service as any, 'generateAccessToken')
@@ -429,6 +462,7 @@ describe('2FA valide', () => {
 
     expect(result.access_token).toBe('access-token');
     expect(result.refreshToken).toBe('refresh-token');
+    expect(result.user.email).toBe('admin@mail.com');
   });
 });
 
