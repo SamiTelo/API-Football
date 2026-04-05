@@ -205,7 +205,11 @@ describe('Nonexistent User', () => {
 
     await expect(
       service.login({ email: 'test@mail.com', password: 'pass123' }),
-    ).rejects.toThrow(new UnauthorizedException('Identifiants invalides'));
+    ).rejects.toThrow(
+      new UnauthorizedException(
+        'Impossible de se connecter. Veuillez verifier votre email pour activer votre compte',
+      ),
+    );
   });
 });
 
@@ -222,7 +226,11 @@ describe('unverified email', () => {
 
     await expect(
       service.login({ email: 'test@mail.com', password: 'pass123' }),
-    ).rejects.toThrow(new UnauthorizedException('Identifiants invalides'));
+    ).rejects.toThrow(
+      new UnauthorizedException(
+        'Impossible de se connecter. Veuillez verifier votre email pour activer votre compte',
+      ),
+    );
   });
 });
 
@@ -241,7 +249,11 @@ describe('Invalid password', () => {
 
     await expect(
       service.login({ email: 'test@mail.com', password: 'wrongpass' }),
-    ).rejects.toThrow(new UnauthorizedException('Identifiants invalides'));
+    ).rejects.toThrow(
+      new UnauthorizedException(
+        "Identifiants invalides. Veuillez reinitialiser votre mot de passe si vous l'avez oublié",
+      ),
+    );
   });
 });
 
