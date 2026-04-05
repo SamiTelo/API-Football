@@ -103,9 +103,7 @@ export class AuthController {
   ) {
     const result = await this.authService.login(dto);
 
-    // ================================
     // Si 2FA requis
-    // ================================
     if ('requires2FA' in result) {
       if (result.userId == null) {
         throw new Error("Impossible de récupérer l'ID utilisateur pour 2FA");
@@ -130,9 +128,7 @@ export class AuthController {
       return { requires2FA: true };
     }
 
-    // ================================
     // Login normal
-    // ================================
     const { access_token, refreshToken, user } = result;
 
     res.cookie('refreshToken', refreshToken, {
