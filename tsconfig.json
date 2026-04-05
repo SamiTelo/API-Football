@@ -3,7 +3,6 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "isolatedModules": true,
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -20,5 +19,6 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "types": ["node", "jest"]
-  }
+  },
+  "exclude": ["node_modules", "dist"]
 }
