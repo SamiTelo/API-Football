@@ -8,7 +8,7 @@ export class ResetPasswordDto {
     required: true,
   })
   @IsNotEmpty({ message: 'Le token de réinitialisation est requis' })
-  token: string;
+  token!: string;
 
   @ApiProperty({
     description: `Entre votre nouveau mot de passe`,
@@ -21,5 +21,5 @@ export class ResetPasswordDto {
     message:
       'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre.',
   })
-  newPassword: string;
+  newPassword!: string;
 }

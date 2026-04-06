@@ -12,13 +12,13 @@ Inclut également du monitoring (Prometheus + Grafana) et du tracking d’erreur
 
 **Objectif** : L’objectif de ce projet est de développer une API backend complète dédiée à la gestion du football, permettant d’administrer des joueurs, des équipes et des postes etc.., tout en s’appuyant sur une architecture moderne et sécurisée.
 Ce projet, bien qu’étant une initiative personnelle, est rendu public pour :
-- partager une architecture propre et réutilisable,
+- Partager une architecture propre et réutilisable afin de bénéficier de vos retours pour m'améliorer constamment.
 - servir de référence ou d’inspiration à d’autres développeurs,
 - et continuer à évoluer autour d’un thème passionnant : le football.
 
 ## Workflow & Collaboration assistée par IA
 
-Ce projet a été développé en utilisant une approche assistée par IA (GPT-5) pour maximiser l'efficacité tout en garantissant la qualité du code.
+Ce projet a été développé en utilisant une approche assistée par IA  pour maximiser l'efficacité tout en garantissant la qualité du code.
 
 - **Architecture & Conception** : La base de données et la structure du projet ont été conçues manuellement pour répondre aux besoins métiers.
 - **Développement & Refactoring** : L'IA a été utilisée pour générer le boilerplate, proposer des optimisations et refactorer le code. Toutes les modifications ont été vérifiées et adaptées manuellement.
@@ -49,7 +49,7 @@ Ce projet a été développé en utilisant une approche assistée par IA (GPT-5)
 
 ##  Fonctionnalités à venir (feature)
 - Optimisation des performances (redis) caching  (en cours...)
-- Inscription & connexion sécurisées (AuthO)
+- Inscription & connexion sécurisées reseaux social google avec (Oauth)
 - Ajout et mise en place de nouveaux modules métier
 - etc...
 

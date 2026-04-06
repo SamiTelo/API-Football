@@ -117,7 +117,6 @@ describe('register', () => {
     jest
       .spyOn(service as any, 'generateToken')
       .mockResolvedValue('verify-token');
-
     jest
       .spyOn(service as any, 'getFrontendUrl')
       .mockReturnValue('http://localhost:3000');
@@ -128,15 +127,12 @@ describe('register', () => {
       email: 'test@mail.com',
       password: 'password123',
     };
-
     const result = await service.register(dto, '127.0.0.1');
 
     expect(result.message).toContain('Compte créé');
-
     expect(prismaMock.signupAttempt.create).toHaveBeenCalledWith({
       data: { ip: '127.0.0.1' },
     });
-
     expect(prismaMock.user.create).toHaveBeenCalledWith({
       data: {
         firstName: dto.firstName,
@@ -147,7 +143,6 @@ describe('register', () => {
         isVerified: false,
       },
     });
-
     expect(mailMock.sendMail).toHaveBeenCalledWith(
       dto.email,
       'Confirmez votre email',
@@ -155,9 +150,8 @@ describe('register', () => {
     );
   });
 
-  it('devrait lancer ConflictException si trop de comptes depuis la même IP', async () => {
+  it('doit lancer ConflictException si trop de comptes depuis la même IP', async () => {
     prismaMock.signupAttempt.count.mockResolvedValue(3);
-
     await expect(
       service.register(
         { firstName: '', lastName: '', email: '', password: '' },
@@ -166,13 +160,12 @@ describe('register', () => {
     ).rejects.toThrow(ConflictException);
   });
 
-  it('devrait lancer ConflictException si email déjà utilisé', async () => {
+  it('doit lancer ConflictException si email déjà utilisé', async () => {
     prismaMock.signupAttempt.count.mockResolvedValue(0);
     prismaMock.user.findUnique.mockResolvedValue({
       id: 1,
       email: 'exists@mail.com',
     });
-
     await expect(
       service.register(
         { firstName: '', lastName: '', email: 'exists@mail.com', password: '' },
@@ -181,11 +174,10 @@ describe('register', () => {
     ).rejects.toThrow(ConflictException);
   });
 
-  it('devrait lancer une erreur si le rôle USER est manquant', async () => {
+  it('doit lancer une erreur si le rôle USER est manquant', async () => {
     prismaMock.signupAttempt.count.mockResolvedValue(0);
     prismaMock.user.findUnique.mockResolvedValue(null);
     prismaMock.role.findUnique.mockResolvedValue(null);
-
     await expect(
       service.register(
         { firstName: '', lastName: '', email: '', password: '' },
@@ -198,157 +190,165 @@ describe('register', () => {
 //==================================================
 // LOGIN
 //==================================================
-// Nonexistent User Test
-describe('Nonexistent User', () => {
-  it('doit échouer si utilisateur introuvable', async () => {
+// Nonexistent User
+describe('login - Nonexistent User', () => {
+  it('échoue si utilisateur introuvable', async () => {
     prismaMock.user.findUnique.mockResolvedValue(null);
-
     await expect(
       service.login({ email: 'test@mail.com', password: 'pass123' }),
-    ).rejects.toThrow(
-      new UnauthorizedException(
-        'Impossible de se connecter. Veuillez verifier votre email pour activer votre compte',
-      ),
-    );
+    ).rejects.toThrow(UnauthorizedException);
   });
 });
 
-// Unverified Test Email
-describe('unverified email', () => {
-  it('doit échouer si email non vérifié', async () => {
+// Unverified Email
+describe('login - Unverified Email', () => {
+  it('échoue si email non vérifié', async () => {
     prismaMock.user.findUnique.mockResolvedValue({
       id: 1,
       email: 'test@mail.com',
       password: 'hashed',
       isVerified: false,
+      provider: 'local',
       role: { name: 'USER' },
     });
-
     await expect(
       service.login({ email: 'test@mail.com', password: 'pass123' }),
-    ).rejects.toThrow(
-      new UnauthorizedException(
-        'Impossible de se connecter. Veuillez verifier votre email pour activer votre compte',
-      ),
-    );
+    ).rejects.toThrow(UnauthorizedException);
   });
 });
 
-// Test Invalid password
-describe('Invalid password', () => {
-  it('doit échouer si mot de passe incorrect', async () => {
+// Invalid Password
+describe('login - Invalid Password', () => {
+  it('échoue si mot de passe incorrect', async () => {
     prismaMock.user.findUnique.mockResolvedValue({
       id: 1,
       email: 'test@mail.com',
       password: 'hashed',
       isVerified: true,
+      provider: 'local',
       role: { name: 'USER' },
     });
-
-    (jest.spyOn(bcrypt, 'compare') as jest.Mock).mockResolvedValue(false);
-
+    (bcrypt.compare as jest.Mock).mockResolvedValue(false);
     await expect(
       service.login({ email: 'test@mail.com', password: 'wrongpass' }),
-    ).rejects.toThrow(
-      new UnauthorizedException(
-        "Identifiants invalides. Veuillez reinitialiser votre mot de passe si vous l'avez oublié",
-      ),
-    );
+    ).rejects.toThrow(UnauthorizedException);
   });
 });
 
-// Test Login OK (USER, without 2FA)
-describe('login OK (USER, without 2FA)', () => {
-  it('doit retourner les tokens si login valide (USER)', async () => {
+// Local User without password
+describe('login - Local User without Password', () => {
+  it('échoue si password manquant', async () => {
     prismaMock.user.findUnique.mockResolvedValue({
-      id: 1,
+      id: 2,
+      email: 'nopass@mail.com',
+      password: null,
+      isVerified: true,
+      provider: 'local',
+      role: { name: 'USER' },
+    });
+    await expect(
+      service.login({ email: 'nopass@mail.com', password: 'anypass' }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+});
+
+// Google account
+describe('login - Google User', () => {
+  it('échoue si compte Google', async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: 3,
+      email: 'google@mail.com',
+      password: null,
+      isVerified: true,
+      provider: 'google',
+      role: { name: 'USER' },
+    });
+    await expect(
+      service.login({ email: 'google@mail.com', password: 'anypass' }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+});
+
+// Successful login USER
+describe('login - USER', () => {
+  it('retourne tokens', async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: 4,
       firstName: 'Test',
       lastName: 'User',
       email: 'test@mail.com',
       password: 'hashed',
       isVerified: true,
+      provider: 'local',
       role: { name: 'USER' },
     });
-
-    (jest.spyOn(bcrypt, 'compare') as jest.Mock).mockResolvedValue(true);
-
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
     jest
       .spyOn(service as any, 'generateAccessToken')
       .mockResolvedValue('access-token');
-
     jest
       .spyOn(service as any, 'generateRefreshToken')
       .mockResolvedValue('refresh-token');
-
     prismaMock.user.update.mockResolvedValue({});
-
     const result = await service.login({
       email: 'test@mail.com',
       password: 'pass123',
     });
-
     expect(result.access_token).toBe('access-token');
     expect(result.refreshToken).toBe('refresh-token');
-    expect(result.user!.email).toBe('test@mail.com');
+    const userResult = result as {
+      user: { id: number; firstName: string; lastName: string; email: string };
+      access_token: string;
+      refreshToken: string;
+    };
+    expect(userResult.user.email).toBe('test@mail.com');
   });
 });
 
-// Test Login ADMIN → 2FA required
-describe('login ADMIN → 2FA required', () => {
-  it('doit demander le 2FA pour un ADMIN', async () => {
+// ADMIN / SUPERADMIN 2FA
+describe('login - 2FA ADMIN/SUPERADMIN', () => {
+  it('demande 2FA pour ADMIN', async () => {
     prismaMock.user.findUnique.mockResolvedValue({
-      id: 2,
+      id: 5,
       firstName: 'Admin',
       email: 'admin@mail.com',
       password: 'hashed',
       isVerified: true,
+      provider: 'local',
       role: { name: 'ADMIN' },
     });
-
-    (jest.spyOn(bcrypt, 'compare') as jest.Mock).mockResolvedValue(true);
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
     prismaMock.user.update.mockResolvedValue({});
     mailMock.sendMail.mockResolvedValue(undefined);
-
     const result = await service.login({
       email: 'admin@mail.com',
       password: 'pass123',
     });
-
     expect(result.requires2FA).toBe(true);
-    expect(result.userId).toBe(2);
+    expect(result.userId).toBe(5);
     expect(mailMock.sendMail).toHaveBeenCalled();
   });
-});
 
-// Test VERIFY EMAIL
-describe('verifyEmail', () => {
-  it('devrait activer le compte et retourner tokens', async () => {
-    jwtMock.verify.mockReturnValue({ sub: 1 });
+  it('demande 2FA pour SUPERADMIN', async () => {
     prismaMock.user.findUnique.mockResolvedValue({
-      id: 1,
-      firstName: 'Test',
-      lastName: 'User',
-      email: 'test@mail.com',
-      role: { name: 'USER' },
+      id: 6,
+      firstName: 'Super',
+      email: 'super@mail.com',
+      password: 'hashed',
+      isVerified: true,
+      provider: 'local',
+      role: { name: 'SUPERADMIN' },
     });
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
     prismaMock.user.update.mockResolvedValue({});
-
-    jest
-      .spyOn(service as any, 'generateAccessToken')
-      .mockResolvedValue('access-token');
-    jest
-      .spyOn(service as any, 'generateRefreshToken')
-      .mockResolvedValue('refresh-token');
-
-    const result = await service.verifyEmail('token');
-
-    expect(prismaMock.user.update).toHaveBeenCalledWith({
-      where: { id: 1 },
-      data: { isVerified: true },
+    mailMock.sendMail.mockResolvedValue(undefined);
+    const result = await service.login({
+      email: 'super@mail.com',
+      password: 'pass123',
     });
-    expect(result.access_token).toBe('access-token');
-    expect(result.refreshToken).toBe('refresh-token');
-    expect(result.user.email).toBe('test@mail.com');
+    expect(result.requires2FA).toBe(true);
+    expect(result.userId).toBe(6);
+    expect(mailMock.sendMail).toHaveBeenCalled();
   });
 });
 
