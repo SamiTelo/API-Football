@@ -13,7 +13,7 @@ export class LoginUserDto {
   @Matches(/^[^{};,!%µ*$#[\]()]+$/, {
     message: 'Certains caractères sont interdits',
   })
-  email: string;
+  email!: string;
 
   @ApiProperty({
     description: `Mot de passe  de l'utilisateur`,
@@ -31,5 +31,5 @@ export class LoginUserDto {
     message:
       'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre.',
   })
-  password: string;
+  password!: string;
 }

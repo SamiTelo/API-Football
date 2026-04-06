@@ -8,6 +8,7 @@ import { MailService } from 'src/mail/mail.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RolesGuard } from './guards/roles.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { GoogleAuthService } from './google-auth.service';
 
 @Module({
   imports: [
@@ -25,7 +26,14 @@ import { JwtAuthGuard } from './jwt-auth.guard';
     ConfigModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard, MailService],
+  providers: [
+    AuthService,
+    GoogleAuthService,
+    JwtStrategy,
+    JwtAuthGuard,
+    RolesGuard,
+    MailService,
+  ],
   exports: [AuthService, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}

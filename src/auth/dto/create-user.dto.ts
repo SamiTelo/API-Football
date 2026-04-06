@@ -9,7 +9,7 @@ export class CreateUserDto {
   })
   @IsString({ message: `le nom doit être une chaine de caractère` })
   @IsNotEmpty({ message: `Nom requis pour s'inscrire` })
-  lastName: string;
+  lastName!: string;
 
   @ApiProperty({
     description: `Prenom  de l'utilisateur`,
@@ -18,7 +18,7 @@ export class CreateUserDto {
   })
   @IsNotEmpty({ message: `Prenom requis pour s'inscrire` })
   @IsString({ message: `le prenom doit être une chaine de caractère` })
-  firstName: string;
+  firstName!: string;
 
   @ApiProperty({
     description: `Adresse email  de l'utilisateur`,
@@ -31,7 +31,7 @@ export class CreateUserDto {
   @Matches(/^[^{};,!%µ*$#[\]()]+$/, {
     message: 'Certains caractères sont interdits',
   })
-  email: string;
+  email!: string;
 
   @ApiProperty({
     description: `Mot de passe  de l'utilisateur`,
@@ -49,5 +49,5 @@ export class CreateUserDto {
     message:
       'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre.',
   })
-  password: string;
+  password!: string;
 }

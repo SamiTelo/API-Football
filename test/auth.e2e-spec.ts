@@ -17,19 +17,16 @@ describe('AuthController (e2e)', () => {
   let adminEmail: string;
   const adminPassword = 'Admin123!';
 
-  /* -------------------------------------------------- *
-  INITIALISATION DE L'APPLICATION 
-  --------------------------------------------------------------- */
-  jest.setTimeout(30000); // Timeout plus long pour éviter les erreurs si DB lent
+  jest.setTimeout(30000); // Timeout plus long
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     })
-      // Mock global du MailService
+      // Mock MailService
       .overrideProvider(MailService)
       .useValue({
-        sendMail: jest.fn().mockResolvedValue(true), // envoie simulé
+        sendMail: jest.fn().mockResolvedValue(true),
       })
       .compile();
 
@@ -38,10 +35,9 @@ describe('AuthController (e2e)', () => {
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
     await app.init();
 
-    // Prisma pour manipuler la DB pendant les tests
     prisma = app.get(PrismaService);
 
-    // Nettoyage DB pour tests
+    // Nettoyage DB
     await prisma.signupAttempt.deleteMany();
     await prisma.user.deleteMany({
       where: { email: { contains: 'test+' } },
@@ -84,25 +80,20 @@ describe('AuthController (e2e)', () => {
     });
   });
 
-  /* ------------------------------------------------ 
-  * FERMETURE DE L'APPLICATION 
-  ------------------------------------------------- */
   afterAll(async () => {
-    await prisma.$disconnect(); // ferme Prisma
-    await app.close(); // ferme Nest
+    await prisma.$disconnect();
+    await app.close();
   });
 
-  /* ------------------------------------------------ 
-  *  WORKFLOW 1 : FULL AUTH FLOW TEST USER
-  ------------------------------------------------- */
+  /* -------------------------------
+   * WORKFLOW USER
+   --------------------------------*/
   describe('USER workflow', () => {
     it('FULL AUTH FLOW (register -> verify -> login -> profile -> refresh -> logout)', async () => {
-      const email = `test+${Date.now()}@example.com`; //  Générer un email unique pour éviter conflit
+      const email = `test+${Date.now()}@example.com`;
       const password = 'Password123!';
 
-      //---------------------------------------------
-      //  REGISTER
-      //---------------------------------------------
+      // REGISTER
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const registerResponse = await request(app.getHttpServer())
         .post('/auth/register')
@@ -114,21 +105,18 @@ describe('AuthController (e2e)', () => {
         })
         .expect(201);
 
-      // Comme l'API renvoie juste un message, on teste le message
       expect(registerResponse.body).toHaveProperty(
         'message',
         'Compte créé. Vérifiez votre email pour l’activer.',
       );
 
-      // Simule la vérification de l'email en mettant à jour directement l'utilisateur dans la DB
+      // Vérification email simulée
       await prisma.user.update({
         where: { email },
         data: { isVerified: true },
       });
 
-      //---------------------------------------------
-      //  LOGIN
-      //---------------------------------------------
+      // LOGIN
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const loginResponse = await request(app.getHttpServer())
         .post('/auth/login')
@@ -141,11 +129,9 @@ describe('AuthController (e2e)', () => {
 
       expect(loginResponse.body).toHaveProperty('access_token');
       expect(loginResponse.body).toHaveProperty('user');
-      expect(token).toBeDefined(); // Vérifie que le token est présent
+      expect(token).toBeDefined();
 
-      //---------------------------------------------
-      //  PROFILE
-      //---------------------------------------------
+      // PROFILE
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const profileResponse = await request(app.getHttpServer())
         .get('/auth/profile')
@@ -154,9 +140,7 @@ describe('AuthController (e2e)', () => {
 
       expect(profileResponse.body).toHaveProperty('email', email);
 
-      //---------------------------------------------
-      //  REFRESH TOKEN
-      //---------------------------------------------
+      // REFRESH
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const refreshResponse = await request(app.getHttpServer())
         .post('/auth/refresh')
@@ -165,9 +149,7 @@ describe('AuthController (e2e)', () => {
 
       expect(refreshResponse.body).toHaveProperty('access_token');
 
-      //---------------------------------------------
-      //  LOGOUT
-      //---------------------------------------------
+      // LOGOUT
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const logoutResponse = await request(app.getHttpServer())
         .post('/auth/logout')
@@ -180,9 +162,9 @@ describe('AuthController (e2e)', () => {
     });
   });
 
-  /* ---------------------------
- * LOGIN ADMIN (2FA)
- --------------------------- */
+  /* -------------------------------
+   * LOGIN ADMIN (2FA)
+   --------------------------------*/
   describe('POST /auth/login (ADMIN)', () => {
     it('devrait renvoyer requires2FA pour ADMIN', async () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -191,14 +173,9 @@ describe('AuthController (e2e)', () => {
         .send({ email: adminEmail, password: adminPassword })
         .expect(201);
 
-      const loginBody = loginRes.body as {
-        requires2FA?: boolean;
-      };
-
-      // Vérifie que le backend demande la 2FA
+      const loginBody = loginRes.body as { requires2FA?: boolean };
       expect(loginBody.requires2FA).toBe(true);
 
-      // Récupère les cookies de manière sûre
       const cookiesRaw = loginRes.headers['set-cookie'];
       const cookies: string[] = Array.isArray(cookiesRaw)
         ? cookiesRaw
@@ -206,13 +183,10 @@ describe('AuthController (e2e)', () => {
           ? [cookiesRaw]
           : [];
 
-      // Vérifie que le cookie twoFARequired est bien présent
       expect(cookies.some((c) => c.includes('twoFARequired'))).toBe(true);
     });
 
-    /* ---------------------------
-   * FORGOT PASSWORD
-   --------------------------- */
+    // FORGOT PASSWORD
     describe('POST /auth/forgot-password', () => {
       it('devrait renvoyer un message de confirmation', async () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -224,24 +198,20 @@ describe('AuthController (e2e)', () => {
         expect(res.body).toHaveProperty('message');
       });
     });
-    /* ---------------------------
-   * RESET PASSWORD
-   --------------------------- */
+
+    // RESET PASSWORD
     describe('POST /auth/reset-password', () => {
       it('devrait réinitialiser le mot de passe', async () => {
-        // Vérifier que l'utilisateur existe
         const user = await prisma.user.findUnique({
           where: { email: adminEmail },
         });
         expect(user).not.toBeNull();
 
-        // Générer un JWT valide pour le test
         const token = jwt.sign(
           { sub: user!.id },
-          process.env.JWT_RESET_SECRET || 'defaultResetSecret', // ou le secret utilisé dans ton AuthService
+          process.env.JWT_RESET_SECRET || 'defaultResetSecret',
           { expiresIn: '1h' },
         );
-
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const res = await request(app.getHttpServer())
           .post('/auth/reset-password')

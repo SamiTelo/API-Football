@@ -21,6 +21,8 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { Roles } from './decorators/roles.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { GoogleAuthService } from './google-auth.service';
+import { GoogleLoginDto } from './dto/google-login-user-dto';
 
 interface AuthenticatedRequest extends Request {
   user: JwtPayload;
@@ -28,7 +30,10 @@ interface AuthenticatedRequest extends Request {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly googleAuthService: GoogleAuthService,
+  ) {}
 
   /* -----------------------------------------------
    * REGISTER (unverified email)
@@ -91,6 +96,27 @@ export class AuthController {
     return this.authService.createAdmin(createUserDto, ip);
   }
 
+  /* -----------------------------------------------
+   * LOGIN WITH GOOGLE
+  ------------------------------------------------ */
+  @Post('google-login')
+  async loginWithGoogle(
+    @Body() dto: GoogleLoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { user, access_token, refreshToken } =
+      await this.googleAuthService.loginWithGoogle(dto.idToken);
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 24 * 3600 * 1000,
+      path: '/',
+    });
+
+    return { user, access_token };
+  }
   /* -----------------------------------------------
  * LOGIN (blocked if email not verified)
 ------------------------------------------------ */

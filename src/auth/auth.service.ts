@@ -282,14 +282,29 @@ export class AuthService {
 
     if (!user || !user.isVerified) {
       throw new UnauthorizedException(
-        'Impossible de se connecter. Veuillez verifier votre email pour activer votre compte',
+        'Impossible de se connecter. Vérifiez vos identifiants et que votre compte est activé.',
+      );
+    }
+
+    // Sécurité : empêcher login password si compte Google
+    if (user.provider !== 'local') {
+      throw new UnauthorizedException(
+        `Ce compte utilise ${user.provider}. Connectez-vous avec ${user.provider}.`,
+      );
+    }
+
+    // Sécurité supplémentaire
+    if (!user.password) {
+      throw new UnauthorizedException(
+        'Ce compte utilise Google. Connectez-vous avec Google.',
       );
     }
 
     const valid = await bcrypt.compare(dto.password, user.password);
+
     if (!valid) {
       throw new UnauthorizedException(
-        "Identifiants invalides. Veuillez reinitialiser votre mot de passe si vous l'avez oublié",
+        'Identifiants invalides. Si vous avez oublié votre mot de passe, vous pouvez le réinitialiser.',
       );
     }
 
@@ -316,7 +331,7 @@ export class AuthService {
         `<p>Bonjour ${user.firstName},</p>
        <p>Voici votre code <strong>${twoFactorCode}</strong>, Veuillez saisir et valider ce code pour vous connecter</p>
        <p><span style="color: red; font-weight: bold;">Attention ! </span> Il expire dans 5 minutes.</p>
-       <p>Si vous n'avez pas tenter de vous connecter, ignorez ce mail.</p>`,
+       <p>Si vous n'avez pas tenté de vous connecter, ignorez ce mail.</p>`,
       );
 
       return {
