@@ -4,91 +4,125 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Position } from '@prisma/client';
+import { Position, Prisma } from '@prisma/client';
 import { CreatePositionDto } from './dto/create-position.dto';
 import { UpdatePositionDto } from './dto/update-position.dto';
+
+export interface GetAllPositionsParams {
+  userId: number;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
 
 @Injectable()
 export class PositionService {
   constructor(private readonly prisma: PrismaService) {}
 
   //------------------------------------------------------
-  // Récupérer toutes les positions
-  //--------------------------------------------------------
-  async getAllPositions(): Promise<Position[]> {
-    return this.prisma.position.findMany();
-  }
+  // GET all positions avec recherche et pagination
+  //------------------------------------------------------
+  async getAllPositions(params: GetAllPositionsParams): Promise<{
+    data: Position[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const { userId, search, page = 1, limit = 10 } = params;
 
-  /**------------------------------------------------------------------
-   * Récupère une position à partir de son ID.
-   * Lance une erreur 404 si aucune position n'est trouvée.
-   ------------------------------------------------------------------------*/
-  async getOnePosition(id: number): Promise<Position> {
-    // Recherche la position dans la base
-    const position = await this.prisma.position.findUnique({
-      where: { id },
+    const where: Prisma.PositionWhereInput = {
+      userId,
+      ...(search && { name: { contains: search, mode: 'insensitive' } }),
+    };
+
+    // total des positions correspondantes
+    const total = await this.prisma.position.count({ where });
+
+    // récupération avec pagination
+    const data = await this.prisma.position.findMany({
+      where,
+      orderBy: { id: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
 
-    // Si aucune position trouvée → erreur
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+  //------------------------------------------------------
+  // GET position par ID
+  //------------------------------------------------------
+  async getOnePosition(id: number, userId: number): Promise<Position> {
+    const position = await this.prisma.position.findFirst({
+      where: { id, userId },
+    });
+
     if (!position) {
       throw new NotFoundException(`Aucune position trouvée avec l'ID ${id}`);
     }
 
-    // Retourne la position trouvée
     return position;
   }
 
-  /**-------------------------------------------------------------------------
-   * Crée une nouvelle position
-   * - Vérifie que le nom n'est pas déjà utilisé
-   * - Renvoie une erreur si la position existe déjà
-   -----------------------------------------------------------------------------------*/
-  async createPosition(data: CreatePositionDto): Promise<Position> {
-    // Vérifie si une position avec le même nom existe déjà
-    const existingPosition = await this.prisma.position.findUnique({
-      where: { name: data.name },
+  //------------------------------------------------------
+  // POST create
+  //------------------------------------------------------
+  async createPosition(
+    data: CreatePositionDto,
+    userId: number,
+  ): Promise<Position> {
+    const existing = await this.prisma.position.findFirst({
+      where: { name: data.name, userId },
     });
 
-    if (existingPosition) {
-      throw new BadRequestException(
-        'Ce poste existe déjà, veuillez choisir un autre',
+    if (existing) {
+      throw new BadRequestException('Ce poste existe déjà pour votre compte.');
+    }
+
+    return this.prisma.position.create({ data: { ...data, userId } });
+  }
+
+  //------------------------------------------------------
+  // PATCH update sécurisé
+  //------------------------------------------------------
+  async updatePosition(
+    id: number,
+    data: UpdatePositionDto,
+    userId: number,
+  ): Promise<Position> {
+    const updated = await this.prisma.position.updateMany({
+      where: { id, userId },
+      data,
+    });
+
+    if (updated.count === 0) {
+      throw new NotFoundException(
+        `Impossible de mettre à jour : aucune position trouvée avec l'ID ${id} pour cet utilisateur.`,
       );
     }
 
-    // Crée et enregistre la nouvelle position
-    return this.prisma.position.create({
-      data,
-    });
+    // Retourne la position mise à jour
+    return this.getOnePosition(id, userId);
   }
 
-  /**--------------------------------------------------------------------
-   * Met à jour une position existante
-   * - Vérifie d'abord si la position existe
-   * - Si elle existe, applique les modifications
-   --------------------------------------------------------------------------*/
-  async updatePosition(id: number, data: UpdatePositionDto): Promise<Position> {
-    // Vérifie si la position existe avant la modification
-    await this.getOnePosition(id);
-
-    // Mettre à jour la position
-    return this.prisma.position.update({
-      where: { id },
-      data,
+  //------------------------------------------------------
+  // DELETE sécurisé
+  //------------------------------------------------------
+  async deletePosition(id: number, userId: number): Promise<{ id: number }> {
+    const deleted = await this.prisma.position.deleteMany({
+      where: { id, userId },
     });
-  }
 
-  /**-------------------------------------------------------------------
-   * Supprime une position existante
-   * - Vérifie si la position existe avant suppression
-   * - Renvoie une erreur si elle n'existe pas
-   ------------------------------------------------------------------------------*/
-  async deletePosition(id: number): Promise<Position> {
-    // Vérifie si la position existe avant de tenter la suppression
-    await this.getOnePosition(id);
+    if (deleted.count === 0) {
+      throw new NotFoundException(
+        `Impossible de supprimer : aucune position trouvée avec l'ID ${id} pour cet utilisateur.`,
+      );
+    }
 
-    // Exécute la suppression de la position
-    return this.prisma.position.delete({
-      where: { id },
-    });
+    return { id };
   }
 }

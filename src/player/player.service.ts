@@ -1,115 +1,145 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Player } from '@prisma/client';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { Prisma, Player } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { UpdatePlayerDto } from './dto/update-player.dto';
+
+export interface GetAllPlayersParams {
+  userId: number;
+  search?: string; // recherche sur firstName / lastName
+  teamId?: number; // filtre par équipe
+  positionId?: number; // filtre par position
+  page?: number;
+  limit?: number;
+}
 
 @Injectable()
 export class PlayerService {
   constructor(private readonly prisma: PrismaService) {}
 
-  //-----------------------------------------------------------
-  //  recupere tout les joueurs
-  //-------------------------------------------------------------
-  async getAllplayer(page = 1, limit = 10): Promise<Player[]> {
-    // pagination affiche les 10 premier joueur
-    return this.prisma.player.findMany({
+  //------------------------------------------------------
+  // GET all players avec recherche, filtres et pagination
+  //------------------------------------------------------
+  async getAllPlayers(params: GetAllPlayersParams): Promise<{
+    data: Player[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const { userId, search, teamId, positionId, page = 1, limit = 10 } = params;
+
+    // clause where typée
+    const where: Prisma.PlayerWhereInput = {
+      userId,
+      ...(teamId && { teamId }),
+      ...(positionId && { positionId }),
+      ...(search && {
+        OR: [
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
+        ],
+      }),
+    };
+
+    const total = await this.prisma.player.count({ where });
+
+    const data = await this.prisma.player.findMany({
+      where,
+      orderBy: { firstName: 'asc' },
       skip: (page - 1) * limit,
       take: limit,
-      //filtrage
-      orderBy: {
-        firstName: 'asc', // Tri alphabétique
-      },
     });
+
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  //-------------------------------------------------------------------------------
-  //  recupere un joueur par l'id
-  //-------------------------------------------------------------------------
-  async getOnePlayer(id: number): Promise<Player> {
-    // Recherche le joueur dans la base
-    const player = await this.prisma.player.findUnique({
-      where: { id },
+  //------------------------------------------------------
+  // GET one player par ID
+  //------------------------------------------------------
+  async getOnePlayer(id: number, userId: number): Promise<Player> {
+    const player = await this.prisma.player.findFirst({
+      where: { id, userId },
     });
 
-    // Si aucun joueur trouvée → erreur
     if (!player) {
-      throw new NotFoundException(`Aucune joueur trouvée avec l'ID ${id}`);
+      throw new NotFoundException(`Aucun joueur trouvé avec l'ID ${id}`);
     }
 
-    // Retourne le joueur trouvée
     return player;
   }
 
-  //---------------------------------------------------------------------------
-  //  recupere tout les joueur par post (postionId)
-  //------------------------------------------------------------------------------
-  async getAllPlayerByPosition(positionId: number): Promise<Player[]> {
-    // Recherche tous les joueurs ayant cette position
-    const players = await this.prisma.player.findMany({
-      where: { positionId },
+  //------------------------------------------------------
+  // POST create player
+  //------------------------------------------------------
+  async createPlayer(data: CreatePlayerDto, userId: number): Promise<Player> {
+    // Vérifie si un joueur avec le même prénom + nom existe pour cet utilisateur
+    const existing = await this.prisma.player.findFirst({
+      where: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        userId,
+      },
     });
 
-    // Si aucun joueur trouvé, renvoie une exception 404
-    if (!players || players.length === 0) {
-      throw new NotFoundException(
-        `Aucun joueur trouvé pour la position avec l'ID ${positionId}`,
+    if (existing) {
+      throw new BadRequestException(
+        `Un joueur avec le nom ${data.firstName} ${data.lastName} existe déjà pour votre compte.`,
       );
     }
 
-    // Retourne la liste des joueurs
-    return players;
-  }
-
-  //------------------------------------------------------------------------
-  //  recupere tout les joueur par equipe (teamId)
-  //------------------------------------------------------------------------
-  async getAllPlayerByteam(teamId: number): Promise<Player[]> {
-    // Recherche tous les joueurs appartenant a cette equipe
-    const players = await this.prisma.player.findMany({
-      where: { teamId },
-    });
-
-    if (!players || players.length == 0) {
-      throw new NotFoundException(
-        `Aucun joueur trouvé pour l'equpie avec l'ID ${teamId}`,
-      );
-    }
-
-    return players;
-  }
-
-  //---------------------------------------------------------------------------
-  //  creer un nouveau joueur
-  //-------------------------------------------------------------------------
-  async createPlayer(data: CreatePlayerDto): Promise<Player> {
     return this.prisma.player.create({
-      data,
+      data: { ...data, userId },
     });
   }
 
-  //------------------------------------------------------------------------------
-  //   mettre a jour un joueur
-  //------------------------------------------------------------------------------
-  async upadtePlayer(id: number, data: UpdatePlayerDto): Promise<Player> {
-    //  verifie si un joueur existe avec cet id
-    await this.getOnePlayer(id);
-
-    return this.prisma.player.update({
-      where: { id },
+  //------------------------------------------------------
+  // PATCH update player (sécurisé par userId)
+  //------------------------------------------------------
+  async updatePlayer(
+    id: number,
+    data: UpdatePlayerDto,
+    userId: number,
+  ): Promise<Player> {
+    // Mise à jour sécurisée
+    const updated = await this.prisma.player.updateMany({
+      where: { id, userId },
       data,
     });
+
+    // Si aucune ligne mise à jour → erreur
+    if (updated.count === 0) {
+      throw new NotFoundException(
+        `Impossible de mettre à jour : aucun joueur trouvé avec l'ID ${id} pour cet utilisateur.`,
+      );
+    }
+
+    // Retourne le joueur mis à jour
+    return this.getOnePlayer(id, userId);
   }
 
-  //---------------------------------------------------------------------------
-  // suprimer un joueur
-  //--------------------------------------------------------------------
-  async deletePlayer(id: number): Promise<Player> {
-    // verifie si un joueur existe avant de supprimer
-    await this.getOnePlayer(id);
-
-    return this.prisma.player.delete({
-      where: { id },
+  //------------------------------------------------------
+  // DELETE sécurisé
+  //------------------------------------------------------
+  async deletePlayer(id: number, userId: number): Promise<{ id: number }> {
+    const deleted = await this.prisma.player.deleteMany({
+      where: { id, userId },
     });
+
+    if (deleted.count === 0) {
+      throw new NotFoundException(
+        `Impossible de supprimer : aucun joueur trouvé avec l'ID ${id} pour cet utilisateur.`,
+      );
+    }
+
+    return { id }; // simple et clair
   }
 }

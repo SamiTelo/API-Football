@@ -117,6 +117,7 @@ export class AuthController {
 
     return { user, access_token };
   }
+
   /* -----------------------------------------------
  * LOGIN (blocked if email not verified)
 ------------------------------------------------ */

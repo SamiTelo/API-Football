@@ -11,7 +11,7 @@ export class CreateTeamDto {
   })
   @IsString({ message: `Le nom doit être une chaine de caractère` })
   @Length(2, 30, { message: `Le champ doit contenir entre 2 et 30 caractères` })
-  name: string;
+  name!: string;
 
   @ApiProperty({
     description: 'le nom du pays',
@@ -21,5 +21,5 @@ export class CreateTeamDto {
   })
   @IsString({ message: `Le nom doit être une chaine de caractère` })
   @MinLength(3, { message: `Le champ  doit contenir au moins 3 caractères` })
-  country: string;
+  country!: string;
 }

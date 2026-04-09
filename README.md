@@ -8,7 +8,7 @@ Inclut également du monitoring (Prometheus + Grafana) et du tracking d’erreur
 - Ce depot est une version migrée du projet original initialiser en Octobre 2025. Le dépot a été reinitialisé pour des raisons de sécurité (nettoyage de l'historique des secrets et clés API).
 
 
-**Statut** : Travail en cours (WIP)
+**Statut** : Travail en cours 
 
 **Objectif** : L’objectif de ce projet est de développer une API backend complète dédiée à la gestion du football, permettant d’administrer des joueurs, des équipes et des postes etc.., tout en s’appuyant sur une architecture moderne et sécurisée.
 Ce projet, bien qu’étant une initiative personnelle, est rendu public pour :
@@ -16,18 +16,10 @@ Ce projet, bien qu’étant une initiative personnelle, est rendu public pour :
 - servir de référence ou d’inspiration à d’autres développeurs,
 - et continuer à évoluer autour d’un thème passionnant : le football.
 
-## Workflow & Collaboration assistée par IA
-
-Ce projet a été développé en utilisant une approche assistée par IA  pour maximiser l'efficacité tout en garantissant la qualité du code.
-
-- **Architecture & Conception** : La base de données et la structure du projet ont été conçues manuellement pour répondre aux besoins métiers.
-- **Développement & Refactoring** : L'IA a été utilisée pour générer le boilerplate, proposer des optimisations et refactorer le code. Toutes les modifications ont été vérifiées et adaptées manuellement.
-- **Tests & Qualité** : Création de tests unitaires et revue de code systématique pour garantir la sécurité, la maintenabilité et la performance de l'application.
-- **Décision finale** : Toutes les décisions techniques et les choix d’implémentation ont été effectués par le développeur (moi), l’IA agissant uniquement comme assistant.
-
 
 ##  Fonctionnalités
 - Inscription & connexion sécurisées (JWT + Refresh Token)
+- Inscription & connexion sécurisées reseaux social google avec (Oauth)
 - Verification par mail (USER)
 - Verification 2FA (ADMIN & SUPERADMIN)
 - Réinitialisation de mot de passe
@@ -47,10 +39,8 @@ Ce projet a été développé en utilisant une approche assistée par IA  pour m
 - CI/CD
 - Github Action
 
-##  Fonctionnalités à venir (feature)
-- Optimisation des performances (redis) caching  (en cours...)
-- Inscription & connexion sécurisées reseaux social google avec (Oauth)
-- Ajout et mise en place de nouveaux modules métier
+##  Fonctionnalités à venir (feature) 
+- Ajout et mise en place de nouveaux modules métier (en cours...)
 - etc...
 
 ##  Stack
@@ -59,6 +49,7 @@ Ce projet a été développé en utilisant une approche assistée par IA  pour m
 - **TypeScript**
 - **Prisma ORM**
 - **JWT**
+- **OAuth**
 - **PostgreSQL**
 - **Swagger**
 - **Docker**
@@ -68,18 +59,7 @@ Ce projet a été développé en utilisant une approche assistée par IA  pour m
 - **Sentry**
 - **Prometheus / Grafana**
 - **Throtller**
-- **Gmail service mail ou sendGrid**
-
-
-## Infrastructure
-
-Backend API deployer sur **Render**
-Production URL: https://api-football-gfpz.onrender.com
-
-- Hosting: Render
-- Database: PostgreSQL (Render)
-- CI/CD: GitHub Actions
-- Environment: Production-ready
+- **Brevo**
   
 
 ##  Modules métier – CRUD complet
@@ -107,17 +87,25 @@ Positions
 - Team
 - Position
 
-
 ##  Variables d’environnement (.env)
 
-Copiez le fichier .env.example puis adaptez les valeurs selon votre environnement (local, test ou production) :
+Copiez le fichier .env.example puis adaptez les valeurs selon votre environnement (local, test ou production) 
 
-```bash
-cp .env.example .env
-```
-**NB :** 
-- Ne jamais commit le fichier .env dans le dépôt.
-- Seul .env.example doit être versionné.
+
+## Infrastructure
+
+Backend API deployer sur **Render**
+Production URL: https://api-football-gfpz.onrender.com
+
+- Hosting: Render
+- Database: PostgreSQL (Render)
+- CI/CD: GitHub Actions
+- Environment: Production-ready
+
+##  Documentation
+
+Une documentation Swagger est disponible : https://api-football-gfpz.onrender.com/docs
+
 
 ## Démarrage
 ```bash
@@ -132,12 +120,6 @@ npm run start:dev
 npm run migrate       # Migration Prisma
 npm run studio        # Prisma Studio
 npm run build
-```
-
-##  Documentation
-Une documentation Swagger est disponible :
-```
-https://api-football-gfpz.onrender.com/docs
 ```
 
 ##  Auteur

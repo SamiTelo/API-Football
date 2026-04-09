@@ -3,82 +3,128 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { Team } from '@prisma/client';
+import { Prisma, Team } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { UpdapteTeamDto } from './dto/update-team.dto';
+
+export interface GetAllTeamsParams {
+  userId: number;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
 
 @Injectable()
 export class TeamService {
   constructor(private readonly prisma: PrismaService) {}
 
-  //------------------------------------------------------------
-  // Afficher tout les team
-  //------------------------------------------------------------
-  async getAllTeam(): Promise<Team[]> {
-    return this.prisma.team.findMany({});
+  //------------------------------------------------------
+  // GET all teams avec recherche et pagination
+  //------------------------------------------------------
+  async getAllTeams(params: GetAllTeamsParams): Promise<{
+    data: Team[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const { userId, search, page = 1, limit = 10 } = params;
+
+    const where: Prisma.TeamWhereInput = {
+      userId,
+      ...(search && { name: { contains: search, mode: 'insensitive' } }),
+    };
+
+    const total = await this.prisma.team.count({ where });
+
+    const data = await this.prisma.team.findMany({
+      where,
+      orderBy: { id: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  /**--------------------------------------------------------------------
-   * Récupère une team à partir de son ID.
-   * Lance une erreur 404 si aucune position n'est trouvée.
-   -------------------------------------------------------------------------------*/
-  async getOneTeam(id: number): Promise<Team> {
-    // récupère l'id
-    const team = await this.prisma.team.findUnique({
-      where: { id },
+  //------------------------------------------------------
+  // GET one team par ID
+  //------------------------------------------------------
+  async getOneTeam(id: number, userId: number): Promise<Team> {
+    const team = await this.prisma.team.findFirst({
+      where: { id, userId },
     });
-    //verifie que une team existe
+
     if (!team) {
-      throw new NotFoundException(`aucune team existe pour cet Id ${id}`);
+      throw new NotFoundException(`Aucune équipe trouvée avec l'ID ${id}`);
     }
+
     return team;
   }
 
-  //---------------------------------------------------------------
-  // Créer une nouvelle équipe
-  //------------------------------------------------------------------
-  async createTeam(data: CreateTeamDto): Promise<Team> {
-    // Vérifie si une équipe possède déjà ce nom
-    const teamExist = await this.prisma.team.findFirst({
-      where: { name: data.name },
+  //------------------------------------------------------
+  // POST create team
+  //------------------------------------------------------
+  async createTeam(data: CreateTeamDto, userId: number): Promise<Team> {
+    const existing = await this.prisma.team.findFirst({
+      where: { name: data.name, userId },
     });
 
-    if (teamExist) {
+    if (existing) {
       throw new BadRequestException(
-        `Une équipe existe déjà avec ce nom, veuillez en choisir un autre.`,
+        'Une équipe avec ce nom existe déjà pour votre compte.',
       );
     }
 
-    // Création de la nouvelle équipe
     return this.prisma.team.create({
-      data,
+      data: { ...data, userId },
     });
   }
 
-  //--------------------------------------------------------------------------
-  // Mettre à jour une équipe
-  //---------------------------------------------------------------------------
-  async updateTeam(id: number, data: UpdapteTeamDto): Promise<Team> {
-    // Vérifie si l'équipe existe
-    await this.getOneTeam(id);
-
-    // Mise à jour de l'équipe
-    return this.prisma.team.update({
-      where: { id },
+  //------------------------------------------------------
+  // PATCH update team (sécurisé par userId)
+  //------------------------------------------------------
+  async updateTeam(
+    id: number,
+    data: UpdapteTeamDto,
+    userId: number,
+  ): Promise<Team> {
+    // Update avec condition sur id + userId
+    const updated = await this.prisma.team.updateMany({
+      where: { id, userId },
       data,
     });
+
+    // Si aucune ligne affectée → NotFound
+    if (updated.count === 0) {
+      throw new NotFoundException(
+        `Impossible de mettre à jour : aucune équipe trouvée avec l'ID ${id} pour cet utilisateur.`,
+      );
+    }
+
+    // Retourner la team mise à jour
+    return this.getOneTeam(id, userId);
   }
 
-  //---------------------------------------------------------------
-  // supprimer une team par son ID
-  //-------------------------------------------------------------
-  async deleteTeam(id: number): Promise<Team> {
-    //verifie si une equipe existe deja avec cet ID
-    await this.getOneTeam(id);
-
-    return this.prisma.team.delete({
-      where: { id },
+  //------------------------------------------------------
+  // DELETE sécurisé pour Team
+  //------------------------------------------------------
+  async deleteTeam(id: number, userId: number): Promise<{ id: number }> {
+    const deleted = await this.prisma.team.deleteMany({
+      where: { id, userId },
     });
+
+    if (deleted.count === 0) {
+      throw new NotFoundException(
+        `Impossible de supprimer : aucune équipe trouvée avec l'ID ${id} pour cet utilisateur.`,
+      );
+    }
+
+    return { id }; // simple et clair
   }
 }
