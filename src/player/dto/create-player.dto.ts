@@ -11,7 +11,7 @@ export class CreatePlayerDto {
   })
   @IsString({ message: `le champ doit être une chaine de caractère` })
   @Length(2, 30)
-  firstName: string;
+  firstName!: string;
 
   @ApiProperty({
     description: 'le nom du joueur',
@@ -19,7 +19,7 @@ export class CreatePlayerDto {
     required: true,
   })
   @IsString({ message: `le champ doit être une chaine de caractère` })
-  lastName: string;
+  lastName!: string;
 
   @ApiProperty({
     description: "l'id de l'equipe",
@@ -28,7 +28,7 @@ export class CreatePlayerDto {
   })
   @IsNumber()
   @IsPositive()
-  teamId: number;
+  teamId!: number;
 
   @ApiProperty({
     description: "l'id du post",
@@ -37,5 +37,5 @@ export class CreatePlayerDto {
   })
   @IsNumber()
   @IsPositive()
-  positionId: number;
+  positionId!: number;
 }

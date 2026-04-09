@@ -11,5 +11,5 @@ export class CreatePositionDto {
   })
   @IsString({ message: `Le nom doit être une chaîne de caractères` })
   @Length(2, 30, { message: `Le nom doit contenir entre 2 et 30 caractères` })
-  name: string;
+  name!: string;
 }

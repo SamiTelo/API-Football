@@ -1,18 +1,17 @@
-// src/logger/logger.service.ts
 import { Injectable } from '@nestjs/common';
 import * as winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import * as Sentry from '@sentry/node';
 import WinstonTransport from 'winston-transport';
+import util from 'node:util';
 
-// Transport Winston pour envoyer automatiquement les logs vers Sentry
+// Transport Sentry
 interface LogInfo {
   level: string;
   message: string | Error;
   [key: string]: unknown;
 }
 
-// Mapping des niveaux Winston vers Sentry
 const levelMap: Record<string, Sentry.SeverityLevel> = {
   error: 'error',
   warn: 'warning',
@@ -23,7 +22,6 @@ const levelMap: Record<string, Sentry.SeverityLevel> = {
 export class SentryWinstonTransport extends WinstonTransport {
   log(info: LogInfo, callback: () => void) {
     setImmediate(() => this.emit('logged', info));
-
     if (info.level === 'error') {
       const err =
         info.message instanceof Error
@@ -31,14 +29,9 @@ export class SentryWinstonTransport extends WinstonTransport {
           : new Error(String(info.message));
       Sentry.captureException(err);
     } else {
-      // Mapping sûr du niveau
       const level: Sentry.SeverityLevel = levelMap[info.level] || 'info';
-      Sentry.addBreadcrumb({
-        message: String(info.message),
-        level,
-      });
+      Sentry.addBreadcrumb({ message: String(info.message), level });
     }
-
     callback();
   }
 }
@@ -48,15 +41,17 @@ export class LoggerService {
   private logger: winston.Logger;
 
   constructor() {
-    const logFormat = winston.format.printf(
-      (info: {
-        level: string;
-        message: string;
-        timestamp: string;
-        stack?: string;
-      }) =>
-        `[${info.timestamp}] ${info.level.toUpperCase()}: ${info.message}${info.stack ? `\n${info.stack}` : ''}`,
-    );
+    const logFormat = winston.format.printf((info) => {
+      const timestamp = new Date().toISOString(); // Toujours string, ESLint content
+      const msg =
+        info.message instanceof Error ? info.message.message : info.message;
+      const stack = info.stack
+        ? info.stack instanceof Error
+          ? info.stack.stack
+          : info.stack
+        : '';
+      return `[${timestamp}] ${info.level.toUpperCase()}: ${util.format(msg)}${stack ? `\n${util.format(stack)}` : ''}`;
+    });
 
     this.logger = winston.createLogger({
       level: 'info',
@@ -67,7 +62,6 @@ export class LoggerService {
       ),
       transports: [
         new winston.transports.Console(),
-
         new DailyRotateFile({
           filename: 'logs/error-%DATE%.log',
           level: 'error',
@@ -76,7 +70,6 @@ export class LoggerService {
           maxSize: '20m',
           maxFiles: '30d',
         }),
-
         new DailyRotateFile({
           filename: 'logs/combined-%DATE%.log',
           datePattern: 'YYYY-MM-DD',
@@ -84,8 +77,7 @@ export class LoggerService {
           maxSize: '20m',
           maxFiles: '30d',
         }),
-
-        new SentryWinstonTransport(), // <-- Intégration Sentry
+        new SentryWinstonTransport(),
       ],
     });
   }
@@ -100,8 +92,6 @@ export class LoggerService {
 
   error(message: string | Error) {
     this.logger.error(message);
-    // Optionnel si je veux double assurance
-    // Sentry.captureException(message instanceof Error ? message : new Error(message));
   }
 
   debug(message: string) {

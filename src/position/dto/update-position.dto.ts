@@ -11,5 +11,5 @@ export class UpdatePositionDto {
   @IsString({ message: `Le nom doit être une chaîne de caractères` })
   @Length(2, 30, { message: `Le nom doit contenir entre 2 et 30 caractères` })
   @IsOptional()
-  name: string;
+  name!: string;
 }
