@@ -5,17 +5,9 @@ Inclut également du monitoring (Prometheus + Grafana) et du tracking d’erreur
 
 **NB :** 
 - (Ce projet est un prototype d’API en cours de développement. La logique métier principale est fonctionnelle.)
-- Ce depot est une version migrée du projet original initialiser en Octobre 2025. Le dépot a été reinitialisé pour des raisons de sécurité (nettoyage de l'historique des secrets et clés API).
 
-
-**Statut** : Travail en cours 
 
 **Objectif** : L’objectif de ce projet est de développer une API backend complète dédiée à la gestion du football, permettant d’administrer des joueurs, des équipes et des postes etc.., tout en s’appuyant sur une architecture moderne et sécurisée.
-Ce projet, bien qu’étant une initiative personnelle, est rendu public pour :
-- Partager une architecture propre et réutilisable afin de bénéficier de vos retours pour m'améliorer constamment.
-- servir de référence ou d’inspiration à d’autres développeurs,
-- et continuer à évoluer autour d’un thème passionnant : le football.
-
 
 ##  Fonctionnalités
 - Inscription & connexion sécurisées (JWT + Refresh Token)
@@ -41,7 +33,11 @@ Ce projet, bien qu’étant une initiative personnelle, est rendu public pour :
 
 ##  Fonctionnalités à venir (feature) 
 - Ajout et mise en place de nouveaux modules métier (en cours...)
-- etc...
+- Club
+- ClubMember
+- Match
+- PlayerStats
+- abonnement
 
 ##  Stack
 - **NestJS**
