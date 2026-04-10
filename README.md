@@ -3,8 +3,7 @@
 API backend complète construite avec NestJS, Prisma, PostgreSQL, sécurisée avec JWT, Refresh Tokens, Roles & Permissions, et comprenant des modules métier (Players, Teams, Positions) etc...
 Inclut également du monitoring (Prometheus + Grafana) et du tracking d’erreurs (Sentry).
 
-**NB :** 
-- (Ce projet est un prototype d’API en cours de développement. La logique métier principale est fonctionnelle.)
+**NB :** (Ce projet est un prototype d’API en cours de développement. La logique métier principale est fonctionnelle.)
 
 
 **Objectif** : L’objectif de ce projet est de développer une API backend complète dédiée à la gestion du football, permettant d’administrer des joueurs, des équipes et des postes etc.., tout en s’appuyant sur une architecture moderne et sécurisée.
@@ -25,8 +24,10 @@ Inclut également du monitoring (Prometheus + Grafana) et du tracking d’erreur
 - Logs structurés (Winston)
 - Sentry (errors & performance)
 - Gestions des joueur, equipe, poste etc..
+- CRUD complet avec recherche, filtrage et pagination
 - Upload (Cloudinary storage) images de joueurs, logos d’équipes, documents…
 - Test unitaire jest et E2E supertest
+- seed prisma
 - Docker
 - CI/CD
 - Github Action
