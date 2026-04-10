@@ -37,7 +37,6 @@ Inclut également du monitoring (Prometheus + Grafana) et du tracking d’erreur
 - ClubMember
 - Match
 - PlayerStats
-- abonnement
 
 ##  Stack
 - **NestJS**
