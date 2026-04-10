@@ -10,110 +10,92 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { PlayerService, GetAllPlayersParams } from './player.service';
+import { PlayerService } from './player.service';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { UpdatePlayerDto } from './dto/update-player.dto';
-import { Permissions } from 'src/auth/decorators/permissions.decorator';
-import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
+import { ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { JwtUser } from 'src/auth/types/jwt-payload.type';
 import { Player } from '@prisma/client';
 import { Throttle } from '@nestjs/throttler';
+import { GetPlayersQueryDto } from './dto/get-player-query.dto';
 
+@ApiBearerAuth('access-token')
+@UseGuards(JwtAuthGuard)
 @Controller('player')
 export class PlayerController {
   constructor(private readonly playerService: PlayerService) {}
 
-  //-----------------------------------------------------------
-  // GET /player?search=&teamId=&positionId=&page=&limit=
-  // Récupérer tous les joueurs avec filtres, recherche et pagination
-  //-----------------------------------------------------------
+  //------------------------------------------------------
+  // GET ALL (clean + scalable)
+  //------------------------------------------------------
   // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
-  @Throttle({ limit: 5, ttl: 10 }) // 5 requêtes / 10 secondes
+  @Throttle({ limit: 5, ttl: 10 })
   @ApiOperation({
     summary: 'Afficher tous les joueurs avec recherche et pagination',
   })
   @Get()
   async getAllPlayers(
-    @Query('search') search?: string,
-    @Query('teamId') teamId?: string,
-    @Query('positionId') positionId?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ): Promise<{
-    data: Player[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
-    const userId = 1; // TODO: remplacer par l'ID du user connecté via AuthGuard/JWT
-    const params: GetAllPlayersParams = {
-      userId,
-      search,
-      teamId: teamId ? parseInt(teamId, 10) : undefined,
-      positionId: positionId ? parseInt(positionId, 10) : undefined,
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
-    };
-
-    return this.playerService.getAllPlayers(params);
+    @CurrentUser() user: JwtUser,
+    @Query() query: GetPlayersQueryDto,
+  ) {
+    return this.playerService.getAllPlayers({
+      userId: user.id,
+      search: query.search,
+      teamId: query.teamId,
+      positionId: query.positionId,
+      page: query.page,
+      limit: query.limit,
+    });
   }
 
-  //-----------------------------------------------------------
-  // GET /player/:id
-  // Récupérer un joueur par ID
-  //-----------------------------------------------------------
+  //------------------------------------------------------
+  // GET ONE
+  //------------------------------------------------------
   @ApiOperation({ summary: 'Afficher un joueur par ID' })
   @Get('/:id')
-  async getOnePlayer(@Param('id', ParseIntPipe) id: number): Promise<Player> {
-    const userId = 1; // TODO: remplacer par l'ID du user connecté
-    return this.playerService.getOnePlayer(id, userId);
+  async getOnePlayer(
+    @CurrentUser() user: JwtUser,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<Player> {
+    return this.playerService.getOnePlayer(id, user.id);
   }
 
-  //-----------------------------------------------------------
-  // POST /player
-  // Créer un joueur
-  //-----------------------------------------------------------
+  //------------------------------------------------------
+  // CREATE
+  //------------------------------------------------------
   @ApiOperation({ summary: 'Créer un nouveau joueur' })
-  @ApiBearerAuth('access-token')
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  @Permissions('CREATE_PLAYER')
   @Post()
-  async createPlayer(@Body() data: CreatePlayerDto): Promise<Player> {
-    const userId = 1; // TODO: remplacer par l'ID du user connecté
-    return this.playerService.createPlayer(data, userId);
+  async createPlayer(
+    @CurrentUser() user: JwtUser,
+    @Body() data: CreatePlayerDto,
+  ): Promise<Player> {
+    return this.playerService.createPlayer(data, user.id);
   }
 
-  //-----------------------------------------------------------
-  // PATCH /player/:id
-  // Mettre à jour un joueur
-  //-----------------------------------------------------------
+  //------------------------------------------------------
+  // UPDATE
+  //------------------------------------------------------
   @ApiOperation({ summary: 'Mettre à jour un joueur' })
-  @ApiBearerAuth('access-token')
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  @Permissions('UPDATE_PLAYER')
   @Patch('/:id')
   async updatePlayer(
+    @CurrentUser() user: JwtUser,
     @Param('id', ParseIntPipe) id: number,
     @Body() data: UpdatePlayerDto,
   ): Promise<Player> {
-    const userId = 1; // TODO: remplacer par l'ID du user connecté
-    return this.playerService.updatePlayer(id, data, userId);
+    return this.playerService.updatePlayer(id, data, user.id);
   }
 
-  //-----------------------------------------------------------
-  // DELETE /player/:id
-  // Supprimer un joueur
-  //-----------------------------------------------------------
+  //------------------------------------------------------
+  // DELETE
+  //------------------------------------------------------
   @ApiOperation({ summary: 'Supprimer un joueur' })
-  @ApiBearerAuth('access-token')
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  @Permissions('DELETE_PLAYER')
   @Delete('/:id')
   async deletePlayer(
+    @CurrentUser() user: JwtUser,
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ id: number }> {
-    const userId = 1; // TODO: remplacer par l'ID du user connecté
-    return this.playerService.deletePlayer(id, userId);
+    return this.playerService.deletePlayer(id, user.id);
   }
 }

@@ -8,91 +8,89 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { TeamService, GetAllTeamsParams } from './team.service';
+import { TeamService } from './team.service';
 import { Team } from '@prisma/client';
 import { CreateTeamDto } from './dto/create-team.dto';
-import { ApiOperation } from '@nestjs/swagger';
 import { UpdapteTeamDto } from './dto/update-team.dto';
+import { GetTeamsQueryDto } from './dto/get-teams-query.dto';
+import { ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { JwtUser } from 'src/auth/types/jwt-payload.type';
 
+@ApiBearerAuth('access-token')
+@UseGuards(JwtAuthGuard)
 @Controller('team')
 export class TeamController {
   constructor(private readonly teamService: TeamService) {}
 
   //------------------------------------------------------
-  // GET /team?search=&page=&limit=
-  // Récupérer toutes les équipes avec pagination et recherche
+  // GET ALL (clean + scalable)
   //------------------------------------------------------
   @ApiOperation({
     summary: 'Afficher toutes les équipes avec recherche et pagination',
   })
   @Get()
   async getAllTeams(
-    @Query('search') search?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ): Promise<{
-    data: Team[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
-    const userId = 1; // TODO : remplacer par l'ID du user connecté
-    const params: GetAllTeamsParams = {
-      userId,
-      search,
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
-    };
-    return this.teamService.getAllTeams(params);
+    @CurrentUser() user: JwtUser,
+    @Query() query: GetTeamsQueryDto,
+  ) {
+    return this.teamService.getAllTeams({
+      userId: user.id,
+      search: query.search,
+      page: query.page,
+      limit: query.limit,
+    });
   }
 
   //------------------------------------------------------
-  // GET /team/:id
-  // Récupérer une équipe par ID (sécurisé)
+  // GET ONE
   //------------------------------------------------------
   @ApiOperation({ summary: 'Afficher une équipe par ID' })
   @Get('/:id')
-  async getOneTeam(@Param('id', ParseIntPipe) id: number): Promise<Team> {
-    const userId = 1; // TODO : remplacer par l'ID du user connecté
-    return this.teamService.getOneTeam(id, userId);
+  async getOneTeam(
+    @CurrentUser() user: JwtUser,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<Team> {
+    return this.teamService.getOneTeam(id, user.id);
   }
 
   //------------------------------------------------------
-  // POST /team
-  // Créer une nouvelle équipe
+  // CREATE
   //------------------------------------------------------
   @ApiOperation({ summary: 'Créer une nouvelle équipe' })
   @Post()
-  async createTeam(@Body() data: CreateTeamDto): Promise<Team> {
-    const userId = 1; // TODO : remplacer par l'ID du user connecté
-    return this.teamService.createTeam(data, userId);
+  async createTeam(
+    @CurrentUser() user: JwtUser,
+    @Body() data: CreateTeamDto,
+  ): Promise<Team> {
+    return this.teamService.createTeam(data, user.id);
   }
 
   //------------------------------------------------------
-  // PATCH /team/:id
-  // Mettre à jour une équipe existante
+  // UPDATE
   //------------------------------------------------------
   @ApiOperation({ summary: 'Mettre à jour une équipe existante' })
   @Patch('/:id')
   async updateTeam(
+    @CurrentUser() user: JwtUser,
     @Param('id', ParseIntPipe) id: number,
     @Body() data: UpdapteTeamDto,
   ): Promise<Team> {
-    const userId = 1; // TODO : remplacer par l'ID du user connecté
-    return this.teamService.updateTeam(id, data, userId);
+    return this.teamService.updateTeam(id, data, user.id);
   }
 
   //------------------------------------------------------
-  // DELETE /team/:id
-  // Supprimer une équipe
+  // DELETE
   //------------------------------------------------------
   @ApiOperation({ summary: 'Supprimer une équipe' })
   @Delete('/:id')
   async deleteTeam(
+    @CurrentUser() user: JwtUser,
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ id: number }> {
-    const userId = 1; // TODO : remplacer par l'ID du user connecté
-    return this.teamService.deleteTeam(id, userId);
+    return this.teamService.deleteTeam(id, user.id);
   }
 }
