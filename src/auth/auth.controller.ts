@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Header,
   Post,
   Req,
   Res,
@@ -221,7 +220,6 @@ export class AuthController {
    ------------------------------------------------ */
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  @Header('Cache-Control', 'no-store')
   async getProfile(@Req() req: AuthenticatedRequest) {
     return this.authService.validateUser(req.user.sub);
   }
