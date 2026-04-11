@@ -6,7 +6,7 @@ import {
   ThrottlerException,
 } from '@nestjs/throttler';
 import type { ThrottlerModuleOptions } from '@nestjs/throttler';
-import { LoggerService } from '../logger/logger.service';
+import { LoggerService } from '../../logger/logger.service';
 import { Counter } from 'prom-client';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';

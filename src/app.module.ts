@@ -15,7 +15,7 @@ import {
 } from '@nestjs/throttler';
 import { LoggerModule } from './logger/logger.module';
 import { LoggerService } from './logger/logger.service';
-import { LoggingThrottlerGuard } from './guards/logging-throttler.guard';
+import { LoggingThrottlerGuard } from './common/guards/logging-throttler.guard';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { SentryTracingModule } from './sentry/sentry-tracing.module';
 import { UploadModule } from './upload/upload.module';
