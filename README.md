@@ -10,7 +10,7 @@ Inclut également du monitoring (Prometheus + Grafana) et du tracking d’erreur
 
 ##  Fonctionnalités
 - Inscription & connexion sécurisées (JWT + Refresh Token)
-- Inscription & connexion sécurisées reseaux social google avec (Oauth)
+- Inscription & connexion sécurisées reseaux social google avec (OAuth)
 - Verification par mail (USER)
 - Verification 2FA (ADMIN & SUPERADMIN)
 - Réinitialisation de mot de passe
