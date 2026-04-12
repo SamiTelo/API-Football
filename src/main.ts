@@ -7,6 +7,7 @@ import { SentryInterceptor } from './sentry/sentry.interceptor';
 import * as dotenv from 'dotenv';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express, { Express } from 'express';
+import { NoCacheInterceptor } from './common/interceptors/no-cache.interceptor';
 
 // Charge l'environnement correspondant
 const env = process.env.NODE_ENV || 'development';
@@ -29,6 +30,9 @@ async function bootstrap() {
 
   // Interceptor global Sentry
   app.useGlobalInterceptors(new SentryInterceptor());
+
+  // Interceptor global
+  app.useGlobalInterceptors(new NoCacheInterceptor());
 
   // Gestion des cookies
   app.use(cookieParser());
