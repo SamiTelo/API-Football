@@ -28,7 +28,7 @@ export class PositionController {
   constructor(private readonly positionService: PositionService) {}
 
   //------------------------------------------------------
-  // GET ALL (clean + scalable)
+  // GET ALL
   //------------------------------------------------------
   @ApiOperation({
     summary: 'Afficher toutes les positions avec recherche et pagination',
@@ -39,7 +39,7 @@ export class PositionController {
     @Query() query: GetPositionsQueryDto,
   ) {
     return this.positionService.getAllPositions({
-      userId: user.id,
+      userId: user.sub,
       search: query.search,
       page: query.page,
       limit: query.limit,
@@ -55,7 +55,7 @@ export class PositionController {
     @CurrentUser() user: JwtUser,
     @Param('id', ParseIntPipe) id: number,
   ): Promise<Position> {
-    return this.positionService.getOnePosition(id, user.id);
+    return this.positionService.getOnePosition(id, user.sub);
   }
 
   //------------------------------------------------------
@@ -69,7 +69,7 @@ export class PositionController {
     @CurrentUser() user: JwtUser,
     @Body() data: CreatePositionDto,
   ): Promise<Position> {
-    return this.positionService.createPosition(data, user.id);
+    return this.positionService.createPosition(data, user.sub);
   }
 
   //------------------------------------------------------
@@ -82,7 +82,7 @@ export class PositionController {
     @Param('id', ParseIntPipe) id: number,
     @Body() data: UpdatePositionDto,
   ): Promise<Position> {
-    return this.positionService.updatePosition(id, data, user.id);
+    return this.positionService.updatePosition(id, data, user.sub);
   }
 
   //------------------------------------------------------
@@ -96,6 +96,6 @@ export class PositionController {
     @CurrentUser() user: JwtUser,
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ id: number }> {
-    return this.positionService.deletePosition(id, user.id);
+    return this.positionService.deletePosition(id, user.sub);
   }
 }

@@ -1,5 +1,6 @@
 export type JwtUser = {
-  id: number;
+  sub: number;
   email: string;
-  role: string;
+  role?: string;
+  permissions?: string[];
 };
