@@ -68,26 +68,66 @@ export class TeamService {
   }
 
   //------------------------------------------------------
-  // POST create team
+  // POST create team (DEBUG VERSION)
   //------------------------------------------------------
   async createTeam(data: CreateTeamDto, userId: number): Promise<Team> {
-    const existing = await this.prisma.team.findFirst({
-      where: { name: data.name, userId },
-    });
+    console.log('====================================');
+    console.log('CREATE TEAM START');
+    console.log('DTO DATA:', JSON.stringify(data, null, 2));
+    console.log('USER ID:', userId);
+    console.log('DATABASE_URL:', !!process.env.DATABASE_URL);
+    console.log('====================================');
 
-    if (existing) {
-      throw new BadRequestException(
-        'Une équipe avec ce nom existe déjà pour votre compte.',
-      );
+    try {
+      console.log('Step 1: checking existing team...');
+
+      const existing = await this.prisma.team.findFirst({
+        where: {
+          name: data.name,
+          userId,
+        },
+      });
+
+      console.log('Existing team:', existing);
+
+      if (existing) {
+        console.warn('Duplicate team detected');
+        throw new BadRequestException(
+          'Une équipe avec ce nom existe déjà pour votre compte.',
+        );
+      }
+
+      console.log('Step 2: creating team...');
+
+      const team = await this.prisma.team.create({
+        data: {
+          name: data.name,
+          country: data.country ?? null,
+          userId,
+        },
+      });
+
+      console.log('TEAM CREATED SUCCESSFULLY:');
+      console.log(team);
+      console.log('CREATE TEAM END');
+
+      return team;
+    } catch (error: unknown) {
+      console.error('====================================');
+      console.error('CREATE TEAM ERROR');
+
+      if (error instanceof Error) {
+        console.error('Message:', error.message);
+        console.error('Stack:', error.stack);
+      } else {
+        console.error('Non-Error object:', error);
+      }
+
+      console.error('Full error:', error);
+      console.error('====================================');
+
+      throw error;
     }
-
-    return this.prisma.team.create({
-      data: {
-        name: data.name,
-        country: data.country ?? null,
-        userId,
-      },
-    });
   }
 
   //------------------------------------------------------
