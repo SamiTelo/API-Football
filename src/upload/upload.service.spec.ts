@@ -1,14 +1,10 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 
-jest.doMock('src/config/cloudinary.config', () => ({
+jest.mock('src/config/cloudinary.config', () => ({
   uploader: {
     destroy: jest.fn().mockResolvedValue({ result: 'ok' }),
-    upload: jest.fn().mockResolvedValue({
-      url: 'http://fakeurl.com/image.jpg',
-      public_id: 'fakeId',
-    }),
   },
-  url: jest.fn((publicId) => `https://cloudinary.com/${publicId}`),
+  url: jest.fn((publicId: string) => `https://cloudinary.com/${publicId}`),
 }));
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -26,8 +22,15 @@ describe('UploadService', () => {
     filename: 'image123',
   } as Express.Multer.File;
 
-  const mockPlayer = { id: 1, cloudinaryPublicId: 'oldPlayerId' };
-  const mockTeam = { id: 1, cloudinaryLogoId: 'oldTeamId' };
+  const mockPlayer = {
+    id: 1,
+    cloudinaryPublicId: 'oldPlayerId',
+  };
+
+  const mockTeam = {
+    id: 1,
+    cloudinaryLogoId: 'oldTeamId',
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -57,9 +60,10 @@ describe('UploadService', () => {
     jest.clearAllMocks();
   });
 
-  /* --------------------------------------------------------------------------
-   * savePlayerImage
-   * -------------------------------------------------------------------------- */
+  /* ============================================================= */
+  /* savePlayerImage */
+  /* ============================================================= */
+
   it('should save player image and destroy old one if exists', async () => {
     (prisma.player.findUnique as jest.Mock).mockResolvedValue(mockPlayer);
     (prisma.player.update as jest.Mock).mockResolvedValue({
@@ -74,8 +78,7 @@ describe('UploadService', () => {
       invalidate: true,
     });
 
-    const playerUpdateMock = prisma.player.update as jest.Mock;
-    expect(playerUpdateMock).toHaveBeenCalledWith({
+    expect(prisma.player.update).toHaveBeenCalledWith({
       where: { id: 1 },
       data: {
         imageUrl: mockFile.path,
@@ -86,9 +89,24 @@ describe('UploadService', () => {
     expect(result.imageUrl).toBe(mockFile.path);
   });
 
-  /* --------------------------------------------------------------------------
-   * saveTeamLogo
-   * -------------------------------------------------------------------------- */
+  it('should throw NotFoundException if player not found', async () => {
+    (prisma.player.findUnique as jest.Mock).mockResolvedValue(null);
+
+    await expect(service.savePlayerImage(1, mockFile)).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it('should throw BadRequestException if file invalid', async () => {
+    await expect(
+      service.savePlayerImage(1, {} as Express.Multer.File),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  /* ============================================================= */
+  /* saveTeamLogo */
+  /* ============================================================= */
+
   it('should save team logo and destroy old one if exists', async () => {
     (prisma.team.findUnique as jest.Mock).mockResolvedValue(mockTeam);
     (prisma.team.update as jest.Mock).mockResolvedValue({
@@ -110,57 +128,59 @@ describe('UploadService', () => {
         cloudinaryLogoId: mockFile.filename,
       },
     });
+
     expect(result.logoUrl).toBe(mockFile.path);
   });
 
   it('should throw NotFoundException if team not found', async () => {
     (prisma.team.findUnique as jest.Mock).mockResolvedValue(null);
+
     await expect(service.saveTeamLogo(1, mockFile)).rejects.toThrow(
       NotFoundException,
     );
   });
 
-  /* --------------------------------------------------------------------------
-   * getPlayerImagePublicId
-   * -------------------------------------------------------------------------- */
-  it('should return player publicId', async () => {
-    (prisma.player.findUnique as jest.Mock).mockResolvedValue(mockPlayer);
-    const result = await service.getPlayerImagePublicId(1);
-    expect(result).toBe('oldPlayerId');
+  /* ============================================================= */
+  /* getPlayerSignedImage */
+  /* ============================================================= */
+
+  it('should return signed player image URL', async () => {
+    (prisma.player.findUnique as jest.Mock).mockResolvedValue({
+      cloudinaryPublicId: 'playerId123',
+    });
+
+    const result = await service.getPlayerSignedImage(1);
+
+    expect(result.url).toBe('https://cloudinary.com/playerId123');
   });
 
-  it('should throw NotFoundException if player has no image', async () => {
-    (prisma.player.findUnique as jest.Mock).mockResolvedValue({ id: 1 });
-    await expect(service.getPlayerImagePublicId(1)).rejects.toThrow(
+  it('should throw NotFoundException if player image missing', async () => {
+    (prisma.player.findUnique as jest.Mock).mockResolvedValue(null);
+
+    await expect(service.getPlayerSignedImage(1)).rejects.toThrow(
       NotFoundException,
     );
   });
 
-  /* --------------------------------------------------------------------------
-   * getTeamLogoPublicId
-   * -------------------------------------------------------------------------- */
-  it('should return team logoId', async () => {
-    (prisma.team.findUnique as jest.Mock).mockResolvedValue(mockTeam);
-    const result = await service.getTeamLogoPublicId(1);
-    expect(result).toBe('oldTeamId');
+  /* ============================================================= */
+  /* getTeamSignedLogo */
+  /* ============================================================= */
+
+  it('should return signed team logo URL', async () => {
+    (prisma.team.findUnique as jest.Mock).mockResolvedValue({
+      cloudinaryLogoId: 'teamId123',
+    });
+
+    const result = await service.getTeamSignedLogo(1);
+
+    expect(result.url).toBe('https://cloudinary.com/teamId123');
   });
 
-  it('should throw NotFoundException if team has no logo', async () => {
-    (prisma.team.findUnique as jest.Mock).mockResolvedValue({ id: 1 });
-    await expect(service.getTeamLogoPublicId(1)).rejects.toThrow(
+  it('should throw NotFoundException if team logo missing', async () => {
+    (prisma.team.findUnique as jest.Mock).mockResolvedValue(null);
+
+    await expect(service.getTeamSignedLogo(1)).rejects.toThrow(
       NotFoundException,
     );
-  });
-
-  /* --------------------------------------------------------------------------
-   * getSignedImage
-   * -------------------------------------------------------------------------- */
-  it('should return signed URL', () => {
-    const url = service.getSignedImage('someId');
-    expect(url).toBe('https://cloudinary.com/someId');
-  });
-
-  it('should throw BadRequestException if publicId missing', () => {
-    expect(() => service.getSignedImage('')).toThrow(BadRequestException);
   });
 });

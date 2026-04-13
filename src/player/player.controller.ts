@@ -30,8 +30,6 @@ export class PlayerController {
   //------------------------------------------------------
   // GET ALL (clean + scalable)
   //------------------------------------------------------
-  // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
-  @Throttle({ limit: 5, ttl: 10 })
   @ApiOperation({
     summary: 'Afficher tous les joueurs avec recherche et pagination',
   })
@@ -65,6 +63,8 @@ export class PlayerController {
   //------------------------------------------------------
   // CREATE
   //------------------------------------------------------
+  // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
+  @Throttle({ limit: 10, ttl: 60 })
   @ApiOperation({ summary: 'Créer un nouveau joueur' })
   @Post()
   async createPlayer(
@@ -90,6 +90,8 @@ export class PlayerController {
   //------------------------------------------------------
   // DELETE
   //------------------------------------------------------
+  // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
+  @Throttle({ limit: 10, ttl: 60 })
   @ApiOperation({ summary: 'Supprimer un joueur' })
   @Delete('/:id')
   async deletePlayer(

@@ -12,7 +12,6 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from './upload.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -20,28 +19,39 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { Roles } from 'src/auth/decorators/roles.decorator';
 import { cloudinaryStorage } from './cloudinary.storage';
 import { UploadImageDto } from './dto/upload-image.dto';
 import { Express } from 'express';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Upload')
+@ApiBearerAuth('access-token')
+@UseGuards(JwtAuthGuard)
 @Controller('upload')
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
-  /* --------------------------------------------------------------------------
-   * UPLOAD IMAGE PLAYER
-   * -------------------------------------------------------------------------- */
-  @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Upload a players image' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPERADMIN')
+  /* -------------------------------------------------------------------------- */
+  /* UPLOAD IMAGE PLAYER */
+  /* -------------------------------------------------------------------------- */
+
+  @ApiOperation({ summary: 'Upload a player image' })
+  // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
+  @Throttle({ limit: 10, ttl: 60 })
   @Post('player/:id/image')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: cloudinaryStorage('players'),
       limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (_, file, callback) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+          return callback(
+            new BadRequestException('Format image invalide'),
+            false,
+          );
+        }
+        callback(null, true);
+      },
     }),
   )
   @ApiConsumes('multipart/form-data')
@@ -57,18 +67,27 @@ export class UploadController {
     return this.uploadService.savePlayerImage(playerId, file);
   }
 
-  /* --------------------------------------------------------------------------
-   * UPLOAD LOGO TEAM
-   * -------------------------------------------------------------------------- */
-  @ApiBearerAuth('access-token')
+  /* -------------------------------------------------------------------------- */
+  /* UPLOAD LOGO TEAM */
+  /* -------------------------------------------------------------------------- */
+
   @ApiOperation({ summary: 'Upload a team logo' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPERADMIN')
+  // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
+  @Throttle({ limit: 10, ttl: 60 })
   @Post('team/:id/logo')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: cloudinaryStorage('teams'),
       limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (_, file, callback) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+          return callback(
+            new BadRequestException('Format image invalide'),
+            false,
+          );
+        }
+        callback(null, true);
+      },
     }),
   )
   @ApiConsumes('multipart/form-data')
@@ -84,35 +103,23 @@ export class UploadController {
     return this.uploadService.saveTeamLogo(teamId, file);
   }
 
-  /* --------------------------------------------------------------------------
-   * GET SIGNED IMAGE PLAYER
-   * -------------------------------------------------------------------------- */
-  @ApiBearerAuth('access-token')
+  /* -------------------------------------------------------------------------- */
+  /* GET SIGNED IMAGE PLAYER */
+  /* -------------------------------------------------------------------------- */
+
   @ApiOperation({ summary: 'Récupérer image d’un joueur' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPERADMIN')
   @Get('player/:id/image')
   async getPlayerSignedImage(@Param('id', ParseIntPipe) playerId: number) {
-    const publicId = await this.uploadService.getPlayerImagePublicId(playerId);
-
-    return {
-      url: this.uploadService.getSignedImage(publicId),
-    };
+    return this.uploadService.getPlayerSignedImage(playerId);
   }
 
-  /* --------------------------------------------------------------------------
-   * GET SIGNED LOGO TEAM
-   * -------------------------------------------------------------------------- */
-  @ApiBearerAuth('access-token')
+  /* -------------------------------------------------------------------------- */
+  /* GET SIGNED LOGO TEAM */
+  /* -------------------------------------------------------------------------- */
+
   @ApiOperation({ summary: 'Récupérer logo d’une équipe' })
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPERADMIN')
   @Get('team/:id/logo')
   async getTeamSignedLogo(@Param('id', ParseIntPipe) teamId: number) {
-    const publicId = await this.uploadService.getTeamLogoPublicId(teamId);
-
-    return {
-      url: this.uploadService.getSignedImage(publicId),
-    };
+    return this.uploadService.getTeamSignedLogo(teamId);
   }
 }

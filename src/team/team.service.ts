@@ -6,7 +6,7 @@ import {
 import { Prisma, Team } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTeamDto } from './dto/create-team.dto';
-import { UpdapteTeamDto } from './dto/update-team.dto';
+import { UpdateTeamDto } from './dto/update-team.dto';
 
 export interface GetAllTeamsParams {
   userId: number;
@@ -91,7 +91,7 @@ export class TeamService {
   //------------------------------------------------------
   async updateTeam(
     id: number,
-    data: UpdapteTeamDto,
+    data: UpdateTeamDto,
     userId: number,
   ): Promise<Team> {
     // Update avec condition sur id + userId

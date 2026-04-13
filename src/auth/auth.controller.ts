@@ -99,6 +99,8 @@ export class AuthController {
   /* -----------------------------------------------
    * LOGIN WITH GOOGLE
   ------------------------------------------------ */
+  // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
+  @Throttle({ limit: 5, ttl: 60 })
   @Post('google-login')
   async loginWithGoogle(
     @Body() dto: GoogleLoginDto,

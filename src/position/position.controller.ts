@@ -19,6 +19,7 @@ import { ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { JwtUser } from 'src/auth/types/jwt-payload.type';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiBearerAuth('access-token')
 @UseGuards(JwtAuthGuard)
@@ -60,6 +61,8 @@ export class PositionController {
   //------------------------------------------------------
   // CREATE
   //------------------------------------------------------
+  // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
+  @Throttle({ limit: 10, ttl: 60 })
   @ApiOperation({ summary: 'Créer une nouvelle position' })
   @Post()
   async createPosition(
@@ -85,6 +88,8 @@ export class PositionController {
   //------------------------------------------------------
   // DELETE
   //------------------------------------------------------
+  // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
+  @Throttle({ limit: 10, ttl: 60 })
   @ApiOperation({ summary: 'Supprimer une position' })
   @Delete('/:id')
   async deletePosition(

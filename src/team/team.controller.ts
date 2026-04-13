@@ -13,12 +13,13 @@ import {
 import { TeamService } from './team.service';
 import { Team } from '@prisma/client';
 import { CreateTeamDto } from './dto/create-team.dto';
-import { UpdapteTeamDto } from './dto/update-team.dto';
 import { GetTeamsQueryDto } from './dto/get-teams-query.dto';
 import { ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { JwtUser } from 'src/auth/types/jwt-payload.type';
+import { UpdateTeamDto } from './dto/update-team.dto';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiBearerAuth('access-token')
 @UseGuards(JwtAuthGuard)
@@ -60,6 +61,8 @@ export class TeamController {
   //------------------------------------------------------
   // CREATE
   //------------------------------------------------------
+  // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
+  @Throttle({ limit: 10, ttl: 60 })
   @ApiOperation({ summary: 'Créer une nouvelle équipe' })
   @Post()
   async createTeam(
@@ -77,7 +80,7 @@ export class TeamController {
   async updateTeam(
     @CurrentUser() user: JwtUser,
     @Param('id', ParseIntPipe) id: number,
-    @Body() data: UpdapteTeamDto,
+    @Body() data: UpdateTeamDto,
   ): Promise<Team> {
     return this.teamService.updateTeam(id, data, user.id);
   }
@@ -85,6 +88,8 @@ export class TeamController {
   //------------------------------------------------------
   // DELETE
   //------------------------------------------------------
+  // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
+  @Throttle({ limit: 10, ttl: 60 })
   @ApiOperation({ summary: 'Supprimer une équipe' })
   @Delete('/:id')
   async deleteTeam(
