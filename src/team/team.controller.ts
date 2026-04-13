@@ -28,7 +28,7 @@ export class TeamController {
   constructor(private readonly teamService: TeamService) {}
 
   //------------------------------------------------------
-  // GET ALL (clean + scalable)
+  // GET ALL
   //------------------------------------------------------
   @ApiOperation({
     summary: 'Afficher toutes les équipes avec recherche et pagination',
@@ -39,7 +39,7 @@ export class TeamController {
     @Query() query: GetTeamsQueryDto,
   ) {
     return this.teamService.getAllTeams({
-      userId: user.id,
+      userId: user.sub,
       search: query.search,
       page: query.page,
       limit: query.limit,
@@ -55,7 +55,7 @@ export class TeamController {
     @CurrentUser() user: JwtUser,
     @Param('id', ParseIntPipe) id: number,
   ): Promise<Team> {
-    return this.teamService.getOneTeam(id, user.id);
+    return this.teamService.getOneTeam(id, user.sub);
   }
 
   //------------------------------------------------------
@@ -69,7 +69,7 @@ export class TeamController {
     @CurrentUser() user: JwtUser,
     @Body() data: CreateTeamDto,
   ): Promise<Team> {
-    return this.teamService.createTeam(data, user.id);
+    return this.teamService.createTeam(data, user.sub);
   }
 
   //------------------------------------------------------
@@ -82,7 +82,7 @@ export class TeamController {
     @Param('id', ParseIntPipe) id: number,
     @Body() data: UpdateTeamDto,
   ): Promise<Team> {
-    return this.teamService.updateTeam(id, data, user.id);
+    return this.teamService.updateTeam(id, data, user.sub);
   }
 
   //------------------------------------------------------
@@ -96,6 +96,6 @@ export class TeamController {
     @CurrentUser() user: JwtUser,
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ id: number }> {
-    return this.teamService.deleteTeam(id, user.id);
+    return this.teamService.deleteTeam(id, user.sub);
   }
 }

@@ -28,7 +28,7 @@ export class PlayerController {
   constructor(private readonly playerService: PlayerService) {}
 
   //------------------------------------------------------
-  // GET ALL (clean + scalable)
+  // GET ALL
   //------------------------------------------------------
   @ApiOperation({
     summary: 'Afficher tous les joueurs avec recherche et pagination',
@@ -39,7 +39,7 @@ export class PlayerController {
     @Query() query: GetPlayersQueryDto,
   ) {
     return this.playerService.getAllPlayers({
-      userId: user.id,
+      userId: user.sub,
       search: query.search,
       teamId: query.teamId,
       positionId: query.positionId,
@@ -57,7 +57,7 @@ export class PlayerController {
     @CurrentUser() user: JwtUser,
     @Param('id', ParseIntPipe) id: number,
   ): Promise<Player> {
-    return this.playerService.getOnePlayer(id, user.id);
+    return this.playerService.getOnePlayer(id, user.sub);
   }
 
   //------------------------------------------------------
@@ -71,7 +71,7 @@ export class PlayerController {
     @CurrentUser() user: JwtUser,
     @Body() data: CreatePlayerDto,
   ): Promise<Player> {
-    return this.playerService.createPlayer(data, user.id);
+    return this.playerService.createPlayer(data, user.sub);
   }
 
   //------------------------------------------------------
@@ -84,7 +84,7 @@ export class PlayerController {
     @Param('id', ParseIntPipe) id: number,
     @Body() data: UpdatePlayerDto,
   ): Promise<Player> {
-    return this.playerService.updatePlayer(id, data, user.id);
+    return this.playerService.updatePlayer(id, data, user.sub);
   }
 
   //------------------------------------------------------
@@ -98,6 +98,6 @@ export class PlayerController {
     @CurrentUser() user: JwtUser,
     @Param('id', ParseIntPipe) id: number,
   ): Promise<{ id: number }> {
-    return this.playerService.deletePlayer(id, user.id);
+    return this.playerService.deletePlayer(id, user.sub);
   }
 }
