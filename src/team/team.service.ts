@@ -82,7 +82,11 @@ export class TeamService {
     }
 
     return this.prisma.team.create({
-      data: { ...data, userId },
+      data: {
+        name: data.name,
+        country: data.country ?? null,
+        userId,
+      },
     });
   }
 
