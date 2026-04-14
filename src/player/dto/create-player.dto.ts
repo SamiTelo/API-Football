@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsPositive, IsString, Length } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+  Length,
+} from 'class-validator';
 
 export class CreatePlayerDto {
   @ApiProperty({
@@ -38,4 +44,12 @@ export class CreatePlayerDto {
   @IsNumber()
   @IsPositive()
   positionId!: number;
+
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  cloudinaryPublicId?: string;
 }

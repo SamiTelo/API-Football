@@ -19,4 +19,12 @@ export class CreateTeamDto {
   @IsString({ message: `Le nom doit être une chaine de caractère` })
   @MinLength(3, { message: `Le champ  doit contenir au moins 3 caractères` })
   country?: string;
+
+  @IsOptional()
+  @IsString()
+  logoUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  cloudinaryLogoId?: string;
 }

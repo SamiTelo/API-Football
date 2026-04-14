@@ -81,7 +81,7 @@ export class PlayerService {
   // POST create player
   //------------------------------------------------------
   async createPlayer(data: CreatePlayerDto, userId: number): Promise<Player> {
-    // Vérifie si un joueur avec le même prénom + nom existe pour cet utilisateur
+    // Vérifier doublon
     const existing = await this.prisma.player.findFirst({
       where: {
         firstName: data.firstName,
@@ -96,8 +96,17 @@ export class PlayerService {
       );
     }
 
+    // Création sécurisée
     return this.prisma.player.create({
-      data: { ...data, userId },
+      data: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        teamId: data.teamId,
+        positionId: data.positionId,
+        userId,
+        imageUrl: data.imageUrl ?? null,
+        cloudinaryPublicId: data.cloudinaryPublicId ?? null,
+      },
     });
   }
 
