@@ -32,7 +32,22 @@ export class TeamService {
 
     const where: Prisma.TeamWhereInput = {
       userId,
-      ...(search && { name: { contains: search, mode: 'insensitive' } }),
+      ...(search && {
+        OR: [
+          {
+            name: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+          {
+            country: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+        ],
+      }),
     };
 
     const total = await this.prisma.team.count({ where });
