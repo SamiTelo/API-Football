@@ -57,6 +57,14 @@ export class TeamService {
       orderBy: { id: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
+      select: {
+        id: true,
+        name: true,
+        country: true,
+        logoUrl: true,
+        cloudinaryLogoId: true,
+        userId: true,
+      },
     });
 
     return {
