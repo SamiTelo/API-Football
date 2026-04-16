@@ -20,6 +20,7 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { SentryTracingModule } from './sentry/sentry-tracing.module';
 import { UploadModule } from './upload/upload.module';
 import { HealthModule } from './health/health.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { HealthModule } from './health/health.module';
     AuthModule,
     SentryTracingModule,
     HealthModule,
+    DashboardModule,
   ],
   providers: [
     {

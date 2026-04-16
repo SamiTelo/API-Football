@@ -32,28 +32,70 @@ export class PlayerService {
   }> {
     const { userId, search, teamId, positionId, page = 1, limit = 10 } = params;
 
-    // clause where typée
+    // WHERE (filters dynamiques)
     const where: Prisma.PlayerWhereInput = {
       userId,
       ...(teamId && { teamId }),
       ...(positionId && { positionId }),
       ...(search && {
         OR: [
-          { firstName: { contains: search, mode: 'insensitive' } },
-          { lastName: { contains: search, mode: 'insensitive' } },
+          {
+            firstName: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
+          {
+            lastName: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          },
         ],
       }),
     };
 
+    // TOTAL COUNT
     const total = await this.prisma.player.count({ where });
 
+    // DATA
     const data = await this.prisma.player.findMany({
       where,
       orderBy: { firstName: 'asc' },
       skip: (page - 1) * limit,
       take: limit,
+
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        imageUrl: true,
+        cloudinaryPublicId: true,
+        teamId: true,
+        positionId: true,
+        userId: true,
+        createdAt: true,
+        updatedAt: true,
+
+        // RELATIONS (nested select)
+        team: {
+          select: {
+            id: true,
+            name: true,
+            logoUrl: true,
+          },
+        },
+
+        position: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
+    // RESPONSE
     return {
       data,
       total,
