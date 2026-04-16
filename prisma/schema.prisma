@@ -79,4 +79,7 @@ model Player {
   imageUrl           String?  @map("image_url")
   position           Position @relation(fields: [positionId], references: [id])
   team               Team     @relation(fields: [teamId], references: [id])
+
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
 }
