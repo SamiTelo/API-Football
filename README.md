@@ -25,6 +25,7 @@ Inclut également du monitoring (Prometheus + Grafana) et du tracking d’erreur
 - Sentry (errors & performance)
 - Gestions des joueur, equipe, poste etc..
 - CRUD complet avec recherche, filtrage et pagination
+- USER Multi-Tenant
 - Upload (Cloudinary storage) images de joueurs, logos d’équipes, documents…
 - Test unitaire jest et E2E supertest
 - seed prisma
