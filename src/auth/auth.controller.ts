@@ -36,7 +36,34 @@ export class AuthController {
   ) {}
 
   /* -----------------------------------------------
-   * REGISTER (unverified email)
+   * HELPER COOKIE CONFIG 
+   ------------------------------------------------ */
+  private accessCookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax' as const,
+    maxAge: 15 * 60 * 1000, // 15 min
+    path: '/',
+  };
+
+  private refreshCookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax' as const,
+    maxAge: 24 * 3600 * 1000, // 24h
+    path: '/',
+  };
+
+  private tempCookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax' as const,
+    maxAge: 10 * 60 * 1000, // 10 min
+    path: '/',
+  };
+
+  /* -----------------------------------------------
+   * REGISTER
    ------------------------------------------------ */
   @Post('register')
   register(@Req() req: Request, @Body() dto: CreateUserDto) {
@@ -60,15 +87,10 @@ export class AuthController {
     const { access_token, refreshToken, user } =
       await this.authService.verifyEmail(dto.token);
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 24 * 3600 * 1000,
-      path: '/',
-    });
+    res.cookie('access_token', access_token, this.accessCookieOptions);
+    res.cookie('refreshToken', refreshToken, this.refreshCookieOptions);
 
-    return { user, access_token };
+    return { user };
   }
 
   /* -----------------------------------------------
@@ -109,20 +131,15 @@ export class AuthController {
     const { user, access_token, refreshToken } =
       await this.googleAuthService.loginWithGoogle(dto.idToken);
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 24 * 3600 * 1000,
-      path: '/',
-    });
+    res.cookie('access_token', access_token, this.accessCookieOptions);
+    res.cookie('refreshToken', refreshToken, this.refreshCookieOptions);
 
-    return { user, access_token };
+    return { user };
   }
 
   /* -----------------------------------------------
- * LOGIN (blocked if email not verified)
------------------------------------------------- */
+   * LOGIN
+  ------------------------------------------------ */
   @Post('login')
   // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
   @Throttle({ limit: 5, ttl: 60 })
@@ -132,48 +149,32 @@ export class AuthController {
   ) {
     const result = await this.authService.login(dto);
 
-    // Si 2FA requis
     if ('requires2FA' in result) {
       if (result.userId == null) {
         throw new Error("Impossible de récupérer l'ID utilisateur pour 2FA");
       }
 
-      res.cookie('pending2FAUser', result.userId.toString(), {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax',
-        maxAge: 10 * 60 * 1000,
-        path: '/',
-      });
-
-      res.cookie('twoFARequired', 'true', {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax',
-        maxAge: 10 * 60 * 1000,
-        path: '/',
-      });
+      res.cookie(
+        'pending2FAUser',
+        result.userId.toString(),
+        this.tempCookieOptions,
+      );
+      res.cookie('twoFARequired', 'true', this.tempCookieOptions);
 
       return { requires2FA: true };
     }
 
-    // Login normal
     const { access_token, refreshToken, user } = result;
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 24 * 3600 * 1000,
-      path: '/',
-    });
+    res.cookie('access_token', access_token, this.accessCookieOptions);
+    res.cookie('refreshToken', refreshToken, this.refreshCookieOptions);
 
-    return { user, access_token };
+    return { user };
   }
 
   /* -----------------------------------------------
- * VERIFY 2FA (admin/SuperDamin)
- ------------------------------------------------ */
+   * VERIFY 2FA
+  ------------------------------------------------ */
   @Post('verify-2fa')
   async verify2fa(
     @Body() dto: { code: string },
@@ -183,38 +184,27 @@ export class AuthController {
     const pendingUserIdStr = req.cookies['pending2FAUser'] as
       | string
       | undefined;
-    if (!pendingUserIdStr)
+
+    if (!pendingUserIdStr) {
       throw new UnauthorizedException('Session 2FA expirée');
+    }
 
     const pendingUserId = Number(pendingUserIdStr);
-    if (Number.isNaN(pendingUserId))
+
+    if (Number.isNaN(pendingUserId)) {
       throw new UnauthorizedException('Session 2FA invalide');
+    }
 
     const { access_token, refreshToken, user } =
       await this.authService.verify2fa(pendingUserId, dto.code);
 
-    // Supprimer le cookie temporaire
     res.clearCookie('pending2FAUser', { path: '/' });
     res.clearCookie('twoFARequired', { path: '/' });
 
-    // Set cookies finaux après validation 2FA
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 24 * 3600 * 1000,
-      path: '/',
-    });
+    res.cookie('access_token', access_token, this.accessCookieOptions);
+    res.cookie('refreshToken', refreshToken, this.refreshCookieOptions);
 
-    res.cookie('twoFAValidated', 'true', {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 24 * 3600 * 1000,
-      path: '/',
-    });
-
-    return { user, access_token };
+    return { user };
   }
 
   /* -----------------------------------------------
@@ -227,7 +217,7 @@ export class AuthController {
   }
 
   /* -----------------------------------------------
-   * REFRESH TOKEN (rotation)
+   * REFRESH TOKEN
    ------------------------------------------------ */
   // @ts-expect-error: TS ne reconnaît pas les propriétés limit/ttl
   @Throttle({ limit: 20, ttl: 60 })
@@ -246,13 +236,8 @@ export class AuthController {
     const { access_token, refreshToken: newRefreshToken } =
       await this.authService.refreshAccessTokenAndUpdateToken(oldRefreshToken);
 
-    res.cookie('refreshToken', newRefreshToken, {
-      httpOnly: true,
-      secure: true, // OBLIGATOIRE en prod HTTPS
-      sameSite: 'lax',
-      maxAge: 24 * 3600 * 1000,
-      path: '/',
-    });
+    res.cookie('access_token', access_token, this.accessCookieOptions);
+    res.cookie('refreshToken', newRefreshToken, this.refreshCookieOptions);
 
     return { access_token };
   }
@@ -262,12 +247,10 @@ export class AuthController {
    ------------------------------------------------ */
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/',
-    });
+    res.clearCookie('access_token', { path: '/' });
+    res.clearCookie('refreshToken', { path: '/' });
+    res.clearCookie('pending2FAUser', { path: '/' });
+    res.clearCookie('twoFARequired', { path: '/' });
 
     return { message: 'Déconnexion réussie' };
   }
