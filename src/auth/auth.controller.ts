@@ -62,8 +62,8 @@ export class AuthController {
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: true, // obligatoire pour HTTPS
-      sameSite: 'none', // cross-domain
+      secure: true,
+      sameSite: 'lax',
       maxAge: 24 * 3600 * 1000,
       path: '/',
     });
