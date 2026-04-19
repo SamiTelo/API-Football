@@ -17,13 +17,12 @@ describe('AuthController (e2e)', () => {
   let adminEmail: string;
   const adminPassword = 'Admin123!';
 
-  jest.setTimeout(30000); // Timeout plus long
+  jest.setTimeout(30000);
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     })
-      // Mock MailService
       .overrideProvider(MailService)
       .useValue({
         sendMail: jest.fn().mockResolvedValue(true),
@@ -37,13 +36,11 @@ describe('AuthController (e2e)', () => {
 
     prisma = app.get(PrismaService);
 
-    // Nettoyage DB
     await prisma.signupAttempt.deleteMany();
     await prisma.user.deleteMany({
       where: { email: { contains: 'test+' } },
     });
 
-    // Crée SUPERADMIN
     superadminEmail = `superadmin+${Date.now()}@example.com`;
     const superadminRole = await prisma.role.findUnique({
       where: { name: 'SUPERADMIN' },
@@ -61,7 +58,6 @@ describe('AuthController (e2e)', () => {
       },
     });
 
-    // Crée ADMIN
     adminEmail = `admin+${Date.now()}@example.com`;
     const adminRole = await prisma.role.findUnique({
       where: { name: 'ADMIN' },
@@ -86,10 +82,10 @@ describe('AuthController (e2e)', () => {
   });
 
   /* -------------------------------
-   * WORKFLOW USER
+   * USER FLOW
    --------------------------------*/
   describe('USER workflow', () => {
-    it('FULL AUTH FLOW (register -> verify -> login -> profile -> refresh -> logout)', async () => {
+    it('FULL AUTH FLOW', async () => {
       const email = `test+${Date.now()}@example.com`;
       const password = 'Password123!';
 
@@ -110,7 +106,6 @@ describe('AuthController (e2e)', () => {
         'Compte créé. Vérifiez votre email pour l’activer.',
       );
 
-      // Vérification email simulée
       await prisma.user.update({
         where: { email },
         data: { isVerified: true },
@@ -123,19 +118,27 @@ describe('AuthController (e2e)', () => {
         .send({ email, password })
         .expect(201);
 
-      const token = (loginResponse.body as { access_token: string })
-        .access_token;
-      const cookies = loginResponse.headers['set-cookie'];
+      const cookies = loginResponse.headers['set-cookie'] as unknown as
+        | string[]
+        | undefined;
 
-      expect(loginResponse.body).toHaveProperty('access_token');
-      expect(loginResponse.body).toHaveProperty('user');
-      expect(token).toBeDefined();
+      if (!cookies) throw new Error('No cookies returned');
+
+      const accessTokenCookie = cookies.find((c) =>
+        c.includes('access_token='),
+      );
+
+      if (!accessTokenCookie) throw new Error('No access_token cookie');
+
+      const accessToken = accessTokenCookie
+        .split('access_token=')[1]
+        .split(';')[0];
 
       // PROFILE
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const profileResponse = await request(app.getHttpServer())
         .get('/auth/profile')
-        .set('Authorization', `Bearer ${token}`)
+        .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
 
       expect(profileResponse.body).toHaveProperty('email', email);
@@ -163,7 +166,7 @@ describe('AuthController (e2e)', () => {
   });
 
   /* -------------------------------
-   * LOGIN ADMIN (2FA)
+   * ADMIN FLOW
    --------------------------------*/
   describe('POST /auth/login (ADMIN)', () => {
     it('devrait renvoyer requires2FA pour ADMIN', async () => {
@@ -186,7 +189,7 @@ describe('AuthController (e2e)', () => {
       expect(cookies.some((c) => c.includes('twoFARequired'))).toBe(true);
     });
 
-    // FORGOT PASSWORD
+    /* FORGOT PASSWORD */
     describe('POST /auth/forgot-password', () => {
       it('devrait renvoyer un message de confirmation', async () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -199,12 +202,13 @@ describe('AuthController (e2e)', () => {
       });
     });
 
-    // RESET PASSWORD
+    /* RESET PASSWORD */
     describe('POST /auth/reset-password', () => {
       it('devrait réinitialiser le mot de passe', async () => {
         const user = await prisma.user.findUnique({
           where: { email: adminEmail },
         });
+
         expect(user).not.toBeNull();
 
         const token = jwt.sign(
@@ -212,6 +216,7 @@ describe('AuthController (e2e)', () => {
           process.env.JWT_RESET_SECRET || 'defaultResetSecret',
           { expiresIn: '1h' },
         );
+
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const res = await request(app.getHttpServer())
           .post('/auth/reset-password')
