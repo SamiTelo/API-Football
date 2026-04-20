@@ -1,6 +1,6 @@
 ## Backend API – NestJS + Prisma + Auth + CRUD Football club
 
-API backend complète construite avec NestJS, Prisma, PostgreSQL, sécurisée avec JWT, Refresh Tokens, Roles & Permissions, et comprenant des modules métier (Players, Teams, Positions) etc...
+API backend complète construite avec NestJS, Prisma, PostgreSQL, sécurisée avec JWT, Refresh Tokens, Roles & Permissions, Cookies HttpOnly et comprenant des modules métier (Players, Teams, Positions) etc...
 Inclut également du monitoring (Prometheus + Grafana) et du tracking d’erreurs (Sentry).
 
 **NB :** (Ce projet est un prototype d’API en cours de développement. La logique métier principale est fonctionnelle.)
@@ -11,6 +11,7 @@ Inclut également du monitoring (Prometheus + Grafana) et du tracking d’erreur
 ##  Fonctionnalités
 - Inscription & connexion sécurisées (JWT + Refresh Token)
 - Inscription & connexion sécurisées reseaux social google avec (OAuth)
+- Hybride Cookies HttpOnly + header Bearer token
 - Verification par mail (USER)
 - Verification 2FA (ADMIN & SUPERADMIN)
 - Réinitialisation de mot de passe

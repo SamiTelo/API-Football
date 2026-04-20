@@ -7,6 +7,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Request } from 'express';
 
 export interface JwtPayload {
   sub: number;
@@ -23,8 +24,16 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (!jwtSecret) {
       throw new InternalServerErrorException('JWT_SECRET doit être défini');
     }
+    // hybride cookie + header Bearer token
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (req: Request): string | null => {
+          return typeof req.cookies?.access_token === 'string'
+            ? req.cookies.access_token
+            : null;
+        },
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       ignoreExpiration: false,
       secretOrKey: jwtSecret,
     });
