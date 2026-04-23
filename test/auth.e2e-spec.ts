@@ -6,7 +6,7 @@ import { PrismaService } from '../src/prisma/prisma.service';
 import cookieParser from 'cookie-parser';
 import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { MailService } from 'src/mail/mail.service';
+import { MailService } from '../src/mail/mail.service';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;

@@ -11,7 +11,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UploadService } from './upload.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import cloudinary from 'src/config/cloudinary.config';
+import cloudinary from '../config/cloudinary.config';
 
 describe('UploadService', () => {
   let service: UploadService;

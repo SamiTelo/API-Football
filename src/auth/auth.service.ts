@@ -7,14 +7,14 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { LoginUserDto } from './dto/login-user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ForgotPasswordDto } from './dto/Password/forgot-password.dto';
 import { ResetPasswordDto } from './dto/Password/reset-password.dto';
-import { MailService } from 'src/mail/mail.service';
+import { MailService } from '../mail/mail.service';
 import { ConfigService } from '@nestjs/config';
 
 interface JwtRefreshPayload {
