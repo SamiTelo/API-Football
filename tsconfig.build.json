@@ -3,7 +3,8 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "moduleResolution": "Node",
+
+    "moduleResolution": "node",
 
     "declaration": false,
     "sourceMap": false,
@@ -14,7 +15,7 @@
   "exclude": [
     "node_modules",
     "dist",
-    "**/*.spec.ts",
-    "test"
+    "test",
+    "**/*.spec.ts"
   ]
 }
