@@ -21,7 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { cloudinaryStorage } from './cloudinary.storage';
 import { UploadImageDto } from './dto/upload-image.dto';
-import { Express } from 'express';
+import type { Express } from 'express';
 import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Upload')

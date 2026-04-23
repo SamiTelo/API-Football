@@ -16,7 +16,7 @@ import { UpdatePlayerDto } from './dto/update-player.dto';
 import { ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { JwtUser } from '../auth/types/jwt-payload.type';
+import type { JwtUser } from '../auth/types/jwt-payload.type';
 import { Player } from '@prisma/client';
 import { Throttle } from '@nestjs/throttler';
 import { GetPlayersQueryDto } from './dto/get-player-query.dto';

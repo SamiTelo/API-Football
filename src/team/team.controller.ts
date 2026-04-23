@@ -17,7 +17,7 @@ import { GetTeamsQueryDto } from './dto/get-teams-query.dto';
 import { ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { JwtUser } from '../auth/types/jwt-payload.type';
+import type { JwtUser } from '../auth/types/jwt-payload.type';
 import { UpdateTeamDto } from './dto/update-team.dto';
 import { Throttle } from '@nestjs/throttler';
 
