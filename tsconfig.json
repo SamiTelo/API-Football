@@ -2,23 +2,33 @@
   "compilerOptions": {
     "module": "commonjs",
     "moduleResolution": "node",
+    "target": "ES2021",
+
+    "rootDir": "./src",
+    "outDir": "./dist",
+
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
     "declaration": true,
     "removeComments": true,
+    "sourceMap": true,
+
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "ES2021",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "paths": { "src/*": ["src/*"] },
+
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
-    "types": ["node", "jest"]
+
+    "baseUrl": ".",
+    "paths": {
+      "src/*": ["src/*"]
+    },
+
+    "types": ["node"]
   },
   "exclude": ["node_modules", "dist"]
 }
