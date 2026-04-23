@@ -47,6 +47,7 @@ Inclut également du monitoring (Prometheus + Grafana) et du tracking d’erreur
 - **TypeScript**
 - **Prisma ORM**
 - **JWT**
+- **Cookies HttpOnly**
 - **OAuth**
 - **PostgreSQL**
 - **Swagger**
@@ -66,14 +67,26 @@ Players
 - CRUD complet des joueurs
 - Association à un poste (Position)
 - Association à une équipe (Team)
+- Pagination, filtrage et recherche
 
 Teams
 - Création & gestion des équipes
 - Relation avec les joueurs
+- Pagination, filtrage et recherche
 
 Positions
 - Gestion des postes (nom unique)
 - Association automatique avec les joueurs
+- Pagination, filtrage et recherche
+
+
+**Autre Module**
+
+- Auth (JWT, Google login, 2FA, reset & forgot password etc...)
+- Upload system
+- Prometheus metrics
+- Dashboard statistics
+- Health check
 
 
 ## Prisma – Modèles utilisés
@@ -100,9 +113,70 @@ Production URL: https://api-football-gfpz.onrender.com
 - CI/CD: GitHub Actions
 - Environment: Production-ready
 
-##  Documentation
 
-Une documentation Swagger est disponible : https://api-football-gfpz.onrender.com/docs
+## API Documentation 
+
+Swagger UI:
+
+![Swagger Screenshot](docs/images/swagger-preview.png)
+
+Une documentation Swagger est disponible: https://api-football-gfpz.onrender.com/docs
+
+## Architecture du projet
+
+
+```bash
+
+API-FOOTBALL/
+│
+├── .github/
+│   └── workflows/                # Automatisation CI/CD
+|       ├── ci.yml
+│       └── cd.yml
+│
+├── docs/
+|   └── images/                    # Swagger UI preview
+│
+├── prisma/                        # Database schema & migrations
+│
+├── src/
+│   ├── auth/                      # Authentication (JWT, Google login, 2FA, reset & forgot password etc...) & authorization logic
+│   │
+│   ├── common/
+│   │   ├── dtos/
+│   │   ├── interfaces/
+│   │   └── guards/
+│   │
+│   ├── config/                     # App configuration
+│   ├── dashboard/                  # Dashboard statistics
+│   ├── health/                     # Health checks
+│   ├── logger/                     # Logging system
+│   ├── mail/                       # Email service
+│   ├── player/                     # Player management
+│   ├── position/                   # Position management
+│   ├── prisma/                     # Prisma service layer
+│   ├── prometheus/                 # Metrics & monitoring
+│   ├── sentry/                     # Error tracking
+│   ├── team/                       # team management
+│   ├── upload/                     # File upload management
+│   │
+│   ├── app.controller.ts
+│   ├── app.module.ts
+│   ├── app.service.ts
+│   └── main.ts
+│
+├── test/                            # Unit & e2e tests
+│
+├── .gitignore
+├── .dockerignore
+├── Dockerfile
+├── docker-compose.yml
+├── package.json
+├── tsconfig.json
+└── README.md
+
+```
+
 
 
 ## Démarrage
@@ -123,4 +197,7 @@ npm run build
 ##  Auteur
 **Tiemtore Samuel**
 Email: [samueltiemtore10@gmail.com](mailto:samueltiemtore10@gmail.com)
+
+## Licence
+Ce projet est sous licence MIT.
 
