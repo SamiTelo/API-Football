@@ -16,9 +16,9 @@ import { CreatePositionDto } from './dto/create-position.dto';
 import { UpdatePositionDto } from './dto/update-position.dto';
 import { GetPositionsQueryDto } from './dto/get-positions-query.dto';
 import { ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
-import { JwtUser } from 'src/auth/types/jwt-payload.type';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtUser } from '../auth/types/jwt-payload.type';
 import { Throttle } from '@nestjs/throttler';
 
 @ApiBearerAuth('access-token')
