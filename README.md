@@ -195,8 +195,8 @@ npm run build
 ```
 
 ##  Auteur
-**Tiemtore Samuel**
-Email: [samueltiemtore10@gmail.com](mailto:samueltiemtore10@gmail.com)
+- **Tiemtore Samuel**
+- Email: [samueltiemtore10@gmail.com](mailto:samueltiemtore10@gmail.com)
 
 ## Licence
 Ce projet est sous licence MIT.
