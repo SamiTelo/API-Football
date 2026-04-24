@@ -58,7 +58,10 @@ Inclut également du monitoring (Prometheus + Grafana) et du tracking d’erreur
 - **Sentry**
 - **Prometheus / Grafana**
 - **Throtller**
+- **Cloudinary**
 - **Brevo**
+- **Render**
+- **Neon**
   
 
 ##  Modules métier – CRUD complet
@@ -109,7 +112,7 @@ Backend API deployer sur **Render**
 Production URL: https://api-football-gfpz.onrender.com
 
 - Hosting: Render
-- Database: PostgreSQL (Render)
+- Database: PostgreSQL deployer sur **Neon**
 - CI/CD: GitHub Actions
 - Environment: Production-ready
 
